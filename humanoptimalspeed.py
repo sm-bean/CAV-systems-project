@@ -52,8 +52,8 @@ def linkCars(humans):
 def main(humans):
   while True:
     for car in humans:
-      print(f"pos: {car.distance_travelled%360}")
-      print(f"v: {car.optimalVelocity(ah, bh, vmax, hst, hgo)}")
+      print(f"pos: {round(car.distance_travelled%360)}")
+      print(f"v: {round(car.optimalVelocity(ah, bh, vmax, hst, hgo))}")
       car.distance_travelled += car.optimalVelocity(ah, bh, vmax, hst, hgo)
     input()
     print([str(x) for x in humans])
@@ -61,4 +61,4 @@ def main(humans):
 
   
 
-main(linkCars([Human(0), Human(30), Human(80), Human(120)]))
+main(linkCars([Human(0), Human(30), Human(80), Human(120), Human(150)]))
