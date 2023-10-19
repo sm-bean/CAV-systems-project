@@ -19,6 +19,9 @@ class Human():
     while x < 0:
       x += track_length
     return x
+  
+  """"def getPosition(self):
+    return self.distance_travelled%360   SAM HELP""" 
 
   def optimalVelocity(self, ah, bh, vmax, hst, hgo):
     headway = self.getHeadway()
@@ -31,14 +34,31 @@ class Human():
 
   def __str__(self):
     x = self.optimalVelocity(ah, bh, vmax, hst, hgo)
-    return f"distance travelled is {self.distance_travelled}, optimal velocity {x}"
-
+    return f"i_x is {self.distance_travelled%360}, delta_s is {self.distance_travelled}, OV {x}"
+'''
 human1 = Human(50)
 human2 = Human(180)
 human3 = Human(360)
-human1.selectCarInFront(human2)
-human2.selectCarInFront(human3)
-human3.selectCarInFront(human1)
-print(human1)
-print(human2)
-print(human3)
+'''
+
+
+def linkCars(humans):
+  for i in range(len(humans)-1):
+    humans[i].selectCarInFront(humans[(i+1)])
+  humans[-1].selectCarInFront(humans[0])
+  return humans
+
+
+def main(humans):
+  while True:
+    for car in humans:
+      print(f"pos: {car.distance_travelled%360}")
+      print(f"v: {car.optimalVelocity(ah, bh, vmax, hst, hgo)}")
+      car.distance_travelled += car.optimalVelocity(ah, bh, vmax, hst, hgo)
+    input()
+    print([str(x) for x in humans])
+
+
+  
+
+main(linkCars([Human(0), Human(30), Human(80), Human(120)]))
