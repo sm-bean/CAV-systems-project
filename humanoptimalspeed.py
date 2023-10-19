@@ -20,9 +20,9 @@ class Human():
       x += track_length
     return x
   
-  """"def getPosition(self):
-    return self.distance_travelled%360   SAM HELP""" 
-
+  def getPosition(self):
+    return self.distance_travelled % 360
+  
   def optimalVelocity(self, ah, bh, vmax, hst, hgo):
     headway = self.getHeadway()
     if headway <= hst:
@@ -32,22 +32,15 @@ class Human():
     else:
       return (vmax/2) * (1 - (math.cos(math.pi * (headway - hst) / (hgo - hst))))
 
-  def __str__(self): # FIX THIS SAM!! (from kai and ojas)
+  def __str__(self):
     x = self.optimalVelocity(ah, bh, vmax, hst, hgo)
-    return f"i_x is {self.distance_travelled%360}, delta_s is {self.distance_travelled}, OV {x}"
-'''
-human1 = Human(50)
-human2 = Human(180)
-human3 = Human(360)
-'''
-
+    return f"i_x is {self.distance_travelled % 360}, delta_s is {self.distance_travelled}, OV {x}"
 
 def linkCars(humans):
   for i in range(len(humans)-1):
     humans[i].selectCarInFront(humans[(i+1)])
   humans[-1].selectCarInFront(humans[0])
   return humans
-
 
 def main(humans):
   while True:
@@ -58,7 +51,8 @@ def main(humans):
     input()
     print([str(x) for x in humans])
 
+humans = [Human(0), Human(30), Human(80), Human(120), Human(150)]
 
-  
+print(humans[0].getPosition())
 
-main(linkCars([Human(0), Human(30), Human(80), Human(120), Human(150)]))
+main(linkCars(humans))
