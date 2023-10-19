@@ -32,7 +32,7 @@ class Human():
     else:
       return (vmax/2) * (1 - (math.cos(math.pi * (headway - hst) / (hgo - hst))))
 
-  def __str__(self):
+  def __str__(self): # FIX THIS SAM!! (from kai and ojas)
     x = self.optimalVelocity(ah, bh, vmax, hst, hgo)
     return f"i_x is {self.distance_travelled%360}, delta_s is {self.distance_travelled}, OV {x}"
 '''
