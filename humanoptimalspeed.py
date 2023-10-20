@@ -1,4 +1,5 @@
 import math
+import matplotlib.pyplot as plt
 
 ah = 0.2
 bh = 0.4
@@ -43,16 +44,33 @@ def linkCars(humans):
   return humans
 
 def main(humans):
+  counter = 0
+  velocityData = []
+  tempVelocity = []
+  fig, ax = plt.subplots(figsize=(5, 2.7), layout='constrained')
   while True:
+    counter += 1
     for car in humans:
+      tempVelocity.append(car.optimalVelocity(ah, bh, vmax, hst, hgo))
       print(f"pos: {round(car.distance_travelled%360)}")
       print(f"v: {round(car.optimalVelocity(ah, bh, vmax, hst, hgo))}")
       car.distance_travelled += car.optimalVelocity(ah, bh, vmax, hst, hgo)
-    input()
+    velocityData.append(tempVelocity)
+    tempVelocity = []
+    usr = input()
+    if usr == 'show':
+      ax.plot([x for x in range(counter)], velocityData)
+      plt.xlabel('Timesteps')
+      plt.ylabel('OV')
+      plt.show()
+      exit()
+    elif usr == 'end':
+      exit()
+
     print([str(x) for x in humans])
 
 humans = [Human(0), Human(30), Human(80), Human(120), Human(150)]
 
-print(humans[0].getPosition())
+#print(humans[0].getPosition())
 
 main(linkCars(humans))
