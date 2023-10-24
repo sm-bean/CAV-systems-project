@@ -8,9 +8,14 @@ hst = 5
 hgo = 55
 car_length = 5
 track_length = 360
+c = 0.05
+amin = -6
+amax = 3
+stepsPerSecond = 10
 class Human():
   def __init__(self, position):
     self.distance_travelled = position
+    self.velocity = 0
 
   def selectCarInFront(self, car_in_front):
     self.next_vehicle = car_in_front
@@ -32,6 +37,27 @@ class Human():
       return vmax
     else:
       return (vmax/2) * (1 - (math.cos(math.pi * (headway - hst) / (hgo - hst))))
+  
+  def getVelocity(self):
+    self.velocity += self.getAcceleration()*stepsPerSecond
+    return self.velocity
+
+  def optimalAcceleration(self):
+    return (self.optimalVelocity(ah, bh, vmax, hst, hgo) - self.velocity) / stepsPerSecond
+
+  def getAcceleration(self):
+    a = self.optimalAcceleration()
+    if a <= amin - c:
+      return amin
+    elif a < amin + c:
+      return a + ((amin-a+c)**2/(4*c))
+    elif a <= amax - c:
+      return a
+    elif a < amax + c:
+      return a - ((amax-a-c)**2/(4*c))
+    else:
+      return amax
+
 
   def __str__(self):
     x = self.optimalVelocity(ah, bh, vmax, hst, hgo)
@@ -51,10 +77,11 @@ def main(humans):
   while True:
     counter += 1
     for car in humans:
-      tempVelocity.append(car.optimalVelocity(ah, bh, vmax, hst, hgo))
+      tempVelocity.append(car.getVelocity())
       print(f"pos: {round(car.distance_travelled%360)}")
-      print(f"v: {round(car.optimalVelocity(ah, bh, vmax, hst, hgo))}")
-      car.distance_travelled += car.optimalVelocity(ah, bh, vmax, hst, hgo)
+      print(f"v: {round(car.getVelocity())}")
+      print(f"a: {round(car.optimalAcceleration())}")
+      car.distance_travelled += car.getVelocity()
     velocityData.append(tempVelocity)
     tempVelocity = []
     usr = input()
