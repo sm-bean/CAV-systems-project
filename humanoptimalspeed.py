@@ -38,15 +38,15 @@ class Human():
     else:
       return (vmax/2) * (1 - (math.cos(math.pi * (headway - hst) / (hgo - hst))))
   
-  def getVelocity(self):
-    self.velocity += self.getAcceleration()*stepsPerSecond
+  def updateVelocity(self):
+    self.velocity += self.getAcceleration()
     return self.velocity
 
-  def optimalAcceleration(self):
-    return (self.optimalVelocity(ah, bh, vmax, hst, hgo) - self.velocity) / stepsPerSecond
+  def optimalAcceleration(self, vstart):
+    return (self.optimalVelocity(ah, bh, vmax, hst, hgo) - vstart) / stepsPerSecond
 
   def getAcceleration(self):
-    a = self.optimalAcceleration()
+    a = self.optimalAcceleration(self.velocity)
     if a <= amin - c:
       return amin
     elif a < amin + c:
@@ -77,11 +77,13 @@ def main(humans):
   while True:
     counter += 1
     for car in humans:
-      tempVelocity.append(car.getVelocity())
+      tempVelocity.append(car.velocity)
+      car.updateVelocity()
       print(f"pos: {round(car.distance_travelled%360)}")
-      print(f"v: {round(car.getVelocity())}")
-      print(f"a: {round(car.optimalAcceleration())}")
-      car.distance_travelled += car.getVelocity()
+      print(f"v: {round(car.velocity)}")
+      print(f"ov: {round(car.optimalVelocity(ah, bh, vmax, hst, hgo))}")
+      print(f"a: {round(car.getAcceleration())}")
+      car.distance_travelled += car.velocity
     velocityData.append(tempVelocity)
     tempVelocity = []
     usr = input()
