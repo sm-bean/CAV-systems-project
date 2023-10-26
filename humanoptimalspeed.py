@@ -7,11 +7,12 @@ vmax = 30
 hst = 5
 hgo = 55
 car_length = 5
-track_length = 360
+track_length = 180
 c = 0.05
 amin = -6
 amax = 3
 stepsPerSecond = 10
+
 class Human():
   def __init__(self, position):
     self.distance_travelled = position
@@ -73,24 +74,32 @@ def main(humans):
   counter = 0
   velocityData = []
   tempVelocity = []
-  fig, ax = plt.subplots(figsize=(5, 2.7), layout='constrained')
+  accelData = []
+  tempAccel = []
+  fig, ax = plt.subplots(ncols=1, nrows=2, figsize=(10, 5.4), layout='constrained', sharex=True)
   while True:
-    counter += 1
-    for car in humans:
-      tempVelocity.append(car.velocity)
-      car.updateVelocity()
-      print(f"pos: {round(car.distance_travelled%360)}")
-      print(f"v: {round(car.velocity)}")
-      print(f"ov: {round(car.optimalVelocity(ah, bh, vmax, hst, hgo))}")
-      print(f"a: {round(car.getAcceleration())}")
-      car.distance_travelled += car.velocity
-    velocityData.append(tempVelocity)
-    tempVelocity = []
+    for x in range(stepsPerSecond):
+      counter += 1
+      for car in humans:
+        tempVelocity.append(car.velocity)
+        tempAccel.append(car.getAcceleration())
+        car.updateVelocity()
+        print(f"pos: {round(car.distance_travelled%360)}")
+        print(f"v: {round(car.velocity)}")
+        print(f"ov: {round(car.optimalVelocity(ah, bh, vmax, hst, hgo))}")
+        print(f"a: {round(car.getAcceleration())}")
+        car.distance_travelled += car.velocity
+      velocityData.append(tempVelocity)
+      accelData.append(tempAccel)
+      tempAccel = []
+      tempVelocity = []
     usr = input()
     if usr == 'show':
-      ax.plot([x for x in range(counter)], velocityData)
+      ax[0].plot([x for x in range(counter)], velocityData)
+      ax[0].set_ylabel('Velocity')
+      ax[1].plot([x for x in range(counter)], accelData)
+      ax[1].set_ylabel('Acceleration')
       plt.xlabel('Timesteps')
-      plt.ylabel('OV')
       plt.show()
       exit()
     elif usr == 'end':
@@ -98,7 +107,7 @@ def main(humans):
 
     print([str(x) for x in humans])
 
-humans = [Human(0), Human(30), Human(80), Human(120), Human(150)]
+humans = [Human(0), Human(30), Human(50), Human(80), Human(120), Human(160), Human(170)]
 
 #print(humans[0].getPosition())
 
