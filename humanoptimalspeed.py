@@ -107,7 +107,7 @@ def main(humans):
 
     print([str(x) for x in humans])
 
-humans = [Human(0), Human(30), Human(50), Human(80), Human(120), Human(160), Human(170)]
+humans = [Human(0), Human(10)]
 
 #print(humans[0].getPosition())
 

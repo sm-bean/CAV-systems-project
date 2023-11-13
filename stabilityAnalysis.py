@@ -29,14 +29,14 @@ R = np.matrix([[-(a + b1 + b2), b1, b2, a * k, 0, 0],
               [0, 0, 0, 0, 0, 0],
               [0, 0, 0, 0, 0, 0],
               [0, 0, 0, 0, 0, 0]])
-I = np.matrix([[1, 0, 0, 0, 0, 0],
-              [0, 1, 0, 0, 0, 0],
-              [0, 0, 1, 0, 0, 0],
-              [0, 0, 0, 1, 0, 0],
-              [0, 0, 0, 0, 1, 0],
-              [0, 0, 0, 0, 0, 1]])
+I = np.matrix([[1, 0, 0, 1, 0, 0],
+              [0, 1, 0, 0, 1, 0],
+              [0, 0, 1, 0, 0, 1],
+              [1, 0, 0, 1, 0, 0],
+              [0, 1, 0, 0, 1, 0],
+              [0, 0, 1, 0, 0, 1]])
 
 def f(gamma):
-    return float(np.linalg.det((gamma * I) - L - (P * (np.exp(1) ** (-gamma * humanDelay))) - (R * (np.exp(1) ** (-gamma * cccDelay)))))
+    return np.linalg.det((gamma * I) - L - (P * (np.exp(1) ** (-gamma * humanDelay))) - (R * (np.exp(1) ** (-gamma * cccDelay))))
 
 print([f(gamma*1j) for gamma in range(100)])
