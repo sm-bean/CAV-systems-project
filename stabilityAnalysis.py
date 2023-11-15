@@ -36,7 +36,25 @@ I = np.matrix([[1, 0, 0, 1, 0, 0],
               [0, 1, 0, 0, 1, 0],
               [0, 0, 1, 0, 0, 1]])
 
+unitSquare = np.array([[-0.5, 0.5], [0.5, 0.5], [-0.5, -0.5], [0.5, -0.5]])
+
+max = 2
+min = -2
+N = 3
+
+sideLength = (max - min) / N-1
+wholeSquare = unitSquare*N
+nodes = []
+for x in range(round(N / sideLength)):
+    for y in range(round(N / sideLength)):
+        square = wholeSquare*sideLength
+        square[:, 0] += x*sideLength
+        square[:, 1] += y*sideLength
+        nodes += [node for node in square]
+nodes = np.array(nodes)
+print(nodes)
+
 def f(gamma):
     return np.linalg.det((gamma * I) - L - (P * (np.exp(1) ** (-gamma * humanDelay))) - (R * (np.exp(1) ** (-gamma * cccDelay))))
 
-print([f(gamma*1j) for gamma in range(100)])
+#print([f(gamma*1j) for gamma in range(100)])
