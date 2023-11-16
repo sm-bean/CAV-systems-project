@@ -1,7 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
-import cplot
-
+from copy import deepcopy
 ah = 0.2
 bh = 0.4
 k = -0.2912416558
@@ -42,17 +41,29 @@ max = 2
 min = -2
 N = 3
 
+def quarterSquare(square):
+    sideLength = square[1][0] - square[0][0]
+    scaledSquare = square*0.5
+    return scaledSquare - (0.25*sideLength)
+
+def makeMesh(square):
+    square = quarterSquare(square)
+    sideLength = square[1][0] - square[0][0]
+    nodes.append(square)
+    square[:, 1] = square[:, 1] +sideLength
+    nodes.append(square)
+    return nodes
+
 sideLength = (max - min) / N-1
-wholeSquare = unitSquare*N
+wholeSquare = unitSquare*max*2
+firstQuarter = quarterSquare(wholeSquare)
+print(makeMesh(wholeSquare))
+plt.plot(wholeSquare[:, 0], wholeSquare[:, 1], 'ro')
+plt.plot(firstQuarter[:, 0], firstQuarter[:, 1], 'bo')
+plt.show()
 nodes = []
-for x in range(round(N / sideLength)):
-    for y in range(round(N / sideLength)):
-        square = wholeSquare*sideLength
-        square[:, 0] += x*sideLength
-        square[:, 1] += y*sideLength
-        nodes += [node for node in square]
-nodes = np.array(nodes)
-print(nodes)
+
+#print(nodes)
 
 def f(gamma):
     return np.linalg.det((gamma * I) - L - (P * (np.exp(1) ** (-gamma * humanDelay))) - (R * (np.exp(1) ** (-gamma * cccDelay))))
