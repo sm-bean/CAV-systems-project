@@ -47,19 +47,22 @@ def quarterSquare(square):
     return scaledSquare - (0.25*sideLength)
 
 def makeMesh(square):
-    square = quarterSquare(square)
     sideLength = square[1][0] - square[0][0]
-    nodes.append(square)
-    square[:, 1] = square[:, 1] +sideLength
-    nodes.append(square)
-    return nodes
+    quartersquare = quarterSquare(square)
+    quartersquare2 = quartersquare.copy()
+    quartersquare2[:, 0] += (sideLength/2)
+    quartersquare3 = quartersquare.copy()
+    quartersquare3[:, 1] += (sideLength/2)
+    quartersquare4 = quartersquare.copy()
+    quartersquare4 += (sideLength/2)
+    return np.concatenate((quartersquare, quartersquare2, quartersquare3, quartersquare4), axis=0)
 
 sideLength = (max - min) / N-1
 wholeSquare = unitSquare*max*2
 firstQuarter = quarterSquare(wholeSquare)
-print(makeMesh(wholeSquare))
-plt.plot(wholeSquare[:, 0], wholeSquare[:, 1], 'ro')
-plt.plot(firstQuarter[:, 0], firstQuarter[:, 1], 'bo')
+initialMesh = makeMesh(wholeSquare)
+secondMesh = makeMesh
+plt.plot(initialMesh[:, 0], initialMesh[:, 1], 'go')
 plt.show()
 nodes = []
 
