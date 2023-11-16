@@ -60,43 +60,54 @@ def makeMesh(square):
     quartersquare4 += (sideLength/2)
     return np.array([quartersquare3, quartersquare4, quartersquare, quartersquare2])
 
+def plot(mesh):
+    meshToPlot = mesh.reshape(-1, 2)
+    plt.plot(meshToPlot[:, 0], meshToPlot[:, 1], 'ro')
+    plt.show()
+
+
 sideLength = (max - min) / N-1
 wholeSquare = unitSquare*max*2
 firstQuarter = quarterSquare(wholeSquare)
 initialMesh = makeMesh(wholeSquare)
-secondMesh = makeMesh
-#print(initialMesh)
-#plt.plot(initialMesh[:, 0], initialMesh[:, 1], 'go')
-plt.show()
-nodes = []
+meshToPlot = initialMesh.reshape(-1, 2)
+plt.plot(meshToPlot[:, 0], meshToPlot[:, 1], 'go')
+#plt.show()
 
-for square in initialMesh:
-    realChanged = False
-    imaginaryChanged = False
-    reals = []
-    imags = []
+finished = False
+while not finished:
 
-    for node in square:
-        value = f(node[0] + node[1]*1j)
-        #print(value)
-        reals.append(value.real)
-        imags.append(value.imag)
-    #print(reals)
-    #print(imags)
-
-    if not(all(i >= 0 for i in reals) or all(i < 0 for i in reals)):
-        realChanged = True
-
-    if not(all(i >= 0 for i in imags) or all(i < 0 for i in imags)):
-        imaginaryChanged = True
-
-    if (imaginaryChanged and realChanged):
-        print("CHANGED!") # further split square
-    else:
-        print(square) # omit square
-        np.delete(initialMesh, square)
-        
+    plot(initialMesh)
     
-#print(nodes)
+    for square in initialMesh:
+        
+        realChanged = False
+        imaginaryChanged = False
+        reals = []
+        imags = []
+
+        for node in square:
+            value = f(node[0] + node[1]*1j)
+            reals.append(value.real)
+            imags.append(value.imag)
+
+        if not(all(i >= 0 for i in reals) or all(i < 0 for i in reals)):
+            realChanged = True
+
+        if not(all(i >= 0 for i in imags) or all(i < 0 for i in imags)):
+            imaginaryChanged = True
+
+        if (imaginaryChanged and realChanged):
+            newSquares = makeMesh(square)
+            initialMesh = np.concatenate((initialMesh, newSquares), axis=0)
+            #print(initialMesh)
+            #print(newSquares)
+            print("CHANGED!") # further split square
+        
+        else:
+            print(square) # omit square
+            np.delete(initialMesh, square)
+        
+plot(initialMesh)  
 
 #print([f(gamma*1j) for gamma in range(100)])
