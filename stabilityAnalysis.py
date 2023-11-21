@@ -44,10 +44,22 @@ max = 2
 min = -2
 N = 3
 
-def quarterSquare(square):
+"""def quarterSquare(square):
     sideLength = square[1][0] - square[0][0]
     scaledSquare = square*0.5
-    return scaledSquare - (0.25*sideLength)
+    return scaledSquare - (0.25*sideLength)"""
+
+def quarterSquare(square): # returns the top-left quarter square
+    hsl = (square[1][0] - square[0][0])/2
+    topLeft = square[0]
+    topRight = square[1]
+    topRight[0] -= hsl
+    bottomLeft = square[2]
+    bottomLeft[1] += hsl
+    bottomRight = square[3]
+    bottomRight[0] -= hsl
+    bottomRight[1] += hsl
+    return np.array([topLeft, topRight, bottomLeft, bottomRight])
 
 def makeMesh(square):
     sideLength = square[1][0] - square[0][0]
@@ -55,10 +67,11 @@ def makeMesh(square):
     quartersquare2 = quartersquare.copy()
     quartersquare2[:, 0] += (sideLength/2)
     quartersquare3 = quartersquare.copy()
-    quartersquare3[:, 1] += (sideLength/2)
+    quartersquare3[:, 1] -= (sideLength/2)
     quartersquare4 = quartersquare.copy()
-    quartersquare4 += (sideLength/2)
-    return np.array([quartersquare3, quartersquare4, quartersquare, quartersquare2])
+    quartersquare4[:, 0] += (sideLength/2)
+    quartersquare4[:, 1] -= (sideLength/2)
+    return np.array([quartersquare, quartersquare2, quartersquare3, quartersquare4])
 
 def plot(mesh):
     meshToPlot = mesh.reshape(-1, 2)
