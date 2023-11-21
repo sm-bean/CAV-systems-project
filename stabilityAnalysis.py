@@ -1,5 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
+import math
 from copy import deepcopy
 ah = 0.2
 bh = 0.4
@@ -9,6 +10,7 @@ b1 = 0
 b2 = 0
 cccDelay = 0.5
 humanDelay = 1
+fineness = 0.001
 
 def f(gamma):
     return np.linalg.det((gamma * I) - L - (P * (np.exp(1) ** (-gamma * humanDelay))) - (R * (np.exp(1) ** (-gamma * cccDelay))))
@@ -49,6 +51,8 @@ N = 3
     scaledSquare = square*0.5
     return scaledSquare - (0.25*sideLength)"""
 
+roots = []
+
 def quarterSquare(square): # returns the top-left quarter square
     hsl = (square[1][0] - square[0][0])/2
     topLeft = square[0]
@@ -75,25 +79,19 @@ def makeMesh(square):
 
 def plot(mesh):
     meshToPlot = mesh.reshape(-1, 2)
-    plt.plot(meshToPlot[:, 0], meshToPlot[:, 1], 'ro')
+    rootsnp = np.array(roots)
+    plt.plot(meshToPlot[:, 0], meshToPlot[:, 1], 'ro', markersize=2)
+    plt.plot(rootsnp[:, 0], rootsnp[:, 1], 'bo', markersize=2)
     plt.show()
 
-
-sideLength = (max - min) / N-1
 wholeSquare = unitSquare*max*2
-firstQuarter = quarterSquare(wholeSquare)
 initialMesh = makeMesh(wholeSquare)
-meshToPlot = initialMesh.reshape(-1, 2)
-plt.plot(meshToPlot[:, 0], meshToPlot[:, 1], 'go')
-#plt.show()
 
 finished = False
 while not finished:
-
-    plot(initialMesh)
     
-    for square in initialMesh:
-        
+    for position,square in enumerate(initialMesh):
+
         realChanged = False
         imaginaryChanged = False
         reals = []
@@ -103,6 +101,11 @@ while not finished:
             value = f(node[0] + node[1]*1j)
             reals.append(value.real)
             imags.append(value.imag)
+
+            if (np.absolute(value)) < fineness:
+                newMesh = np.delete(initialMesh, position, axis=0)
+                root = [node[0], node[1]]
+                roots.append(root)
 
         if not(all(i >= 0 for i in reals) or all(i < 0 for i in reals)):
             realChanged = True
@@ -115,12 +118,13 @@ while not finished:
             initialMesh = np.concatenate((initialMesh, newSquares), axis=0)
             #print(initialMesh)
             #print(newSquares)
-            print("CHANGED!") # further split square
+            #print("CHANGED!") # further split square
         
         else:
-            print(square) # omit square
-            np.delete(initialMesh, square)
-        
+            #print(square) # omit square
+            newMesh = np.delete(initialMesh, position, axis=0)
+    plot(initialMesh)
+            
 plot(initialMesh)  
 
 #print([f(gamma*1j) for gamma in range(100)])
