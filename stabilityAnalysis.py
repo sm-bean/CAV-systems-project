@@ -10,7 +10,7 @@ b1 = 0
 b2 = 0
 cccDelay = 0.5
 humanDelay = 1
-fineness = 0.001
+fineness = 0.0001
 
 def f(gamma):
     return np.linalg.det((gamma * I) - L - (P * (np.exp(1) ** (-gamma * humanDelay))) - (R * (np.exp(1) ** (-gamma * cccDelay))))
@@ -44,13 +44,7 @@ unitSquare = np.array([[-0.5, 0.5], [0.5, 0.5], [-0.5, -0.5], [0.5, -0.5]])
 
 max = 2
 min = -2
-N = 3
-
-"""def quarterSquare(square):
-    sideLength = square[1][0] - square[0][0]
-    scaledSquare = square*0.5
-    return scaledSquare - (0.25*sideLength)"""
-
+meshDensity = 4
 roots = []
 
 def quarterSquare(square): # returns the top-left quarter square
@@ -79,7 +73,8 @@ def makeMesh(square):
 
 def plot(mesh):
     meshToPlot = mesh.reshape(-1, 2)
-    rootsnp = np.array(roots)
+    rootsnp = np.unique(np.array(roots), axis=0)
+    print([root[0] + root[1]*1j for root in rootsnp], '\n')
     plt.plot(meshToPlot[:, 0], meshToPlot[:, 1], 'ro', markersize=2)
     plt.plot(rootsnp[:, 0], rootsnp[:, 1], 'bo', markersize=2)
     plt.show()
@@ -87,44 +82,60 @@ def plot(mesh):
 wholeSquare = unitSquare*max*2
 initialMesh = makeMesh(wholeSquare)
 
+#Creating a sufficiently dense mesh
+for x in range(meshDensity):
+    for square in initialMesh:
+        newSquares = makeMesh(square)
+        initialMesh = np.unique(np.concatenate((initialMesh, newSquares), axis=0), axis=0)
+
+
 finished = False
 while not finished:
+
+    previousMesh = initialMesh.copy()
     
     for position,square in enumerate(initialMesh):
-
+        squareContainsRoot = False
         realChanged = False
         imaginaryChanged = False
         reals = []
         imags = []
 
         for node in square:
+            #Calculating values at corners of square
             value = f(node[0] + node[1]*1j)
             reals.append(value.real)
             imags.append(value.imag)
 
+            #Checking if results are close enough
             if (np.absolute(value)) < fineness:
-                newMesh = np.delete(initialMesh, position, axis=0)
+                np.delete(initialMesh, position, axis=0)
                 root = [node[0], node[1]]
                 roots.append(root)
+                squareContainsRoot = True
 
+        #Checking if sign changed
         if not(all(i >= 0 for i in reals) or all(i < 0 for i in reals)):
             realChanged = True
 
         if not(all(i >= 0 for i in imags) or all(i < 0 for i in imags)):
             imaginaryChanged = True
 
-        if (imaginaryChanged and realChanged):
+        if (imaginaryChanged and realChanged and not squareContainsRoot):
             newSquares = makeMesh(square)
-            initialMesh = np.concatenate((initialMesh, newSquares), axis=0)
-            #print(initialMesh)
-            #print(newSquares)
-            #print("CHANGED!") # further split square
+            initialMesh = np.unique(np.concatenate((initialMesh, newSquares), axis=0), axis=0)
+            # further split square
         
         else:
-            #print(square) # omit square
-            newMesh = np.delete(initialMesh, position, axis=0)
-    plot(initialMesh)
-            
-plot(initialMesh)  
+            # omit square
+            np.delete(initialMesh, position, axis=0)
 
-#print([f(gamma*1j) for gamma in range(100)])
+    plot(initialMesh)
+
+    #Check if there are any remaining bracketing squares
+    if np.array_equal(initialMesh, previousMesh):
+        finished = True
+
+plot(initialMesh)
+
+            
