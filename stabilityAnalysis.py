@@ -8,7 +8,7 @@ k = -0.2912416558
 a = 1
 b1 = 0
 b2 = 0
-cccDelay = 0.5
+cccDelay = 0.8
 humanDelay = 1
 fineness = 0.0001
 
@@ -42,7 +42,7 @@ I = np.matrix([[1, 0, 0, 1, 0, 0],
 
 unitSquare = np.array([[-0.5, 0.5], [0.5, 0.5], [-0.5, -0.5], [0.5, -0.5]])
 
-max = 2
+max = 5
 min = -2
 meshDensity = 4
 roots = []
@@ -108,10 +108,11 @@ while not finished:
             imags.append(value.imag)
 
             #Checking if results are close enough
+            absolute = np.absolute(value)
             if (np.absolute(value)) < fineness:
-                np.delete(initialMesh, position, axis=0)
                 root = [node[0], node[1]]
                 roots.append(root)
+                np.delete(initialMesh, position, axis=0)
                 squareContainsRoot = True
 
         #Checking if sign changed
@@ -126,11 +127,12 @@ while not finished:
             initialMesh = np.unique(np.concatenate((initialMesh, newSquares), axis=0), axis=0)
             # further split square
         
+        
         else:
             # omit square
             np.delete(initialMesh, position, axis=0)
 
-    plot(initialMesh)
+    #plot(initialMesh)
 
     #Check if there are any remaining bracketing squares
     if np.array_equal(initialMesh, previousMesh):
