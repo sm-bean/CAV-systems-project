@@ -3,16 +3,16 @@ import matplotlib.pyplot as plt
 import pygame, sys
 
 ah = 0.2
-bh = 0.4
-vmax = 30
+bh = 1.5
+vmax = 5
 hst = 5
 hgo = 55
 car_length = 5
-track_length = 180
+track_length = 90
 c = 0.05
-amin = -6
+amin = -20
 amax = 3
-stepsPerSecond = 10
+stepsPerSecond = 100
 
 class Human():
   def __init__(self, position):
@@ -108,20 +108,20 @@ def main(humans):
       ax[1].set_ylabel('Acceleration')
       plt.xlabel('Timesteps')
       plt.show()
-      exit()
+      break
     elif usr == 'end':
       break
 
     print([str(x) for x in humans])
 
-humans = [Human(0), Human(10)]
+humans = [Human(0), Human(80)]
 
 #print(humans[0].getPosition())
 
 main(linkCars(humans))
 
 #Animation starts here
-print(positionData)
+#print(positionData)
 pygame.init()
 
 class humanSprite:
@@ -137,7 +137,9 @@ screen_width = 720
 screen_height = 720
 screen = pygame.display.set_mode((screen_width, screen_height))
 
-humanCar = humanSprite((0, 0), (0, 255, 0))
+humanSprites = [humanSprite((0, 0), 'RED') for car in humans]
+humanCar = humanSprite((0, 0), 'RED')
+
 bg = pygame.image.load("RingRoad.png")
 bg = pygame.transform.scale(bg, (screen_width, screen_height))
 r = 300
@@ -149,10 +151,13 @@ for x in range(len(positionData)-1):
     if event.type == pygame.QUIT:
       pygame.quit()
       sys.exit()
-  print(positionData[x][0])
-  humanCar.x, humanCar.y = (r*math.cos(positionData[x][0])+360, 720-(r*math.sin(positionData[x][0])+360))
-  humanCar.display()
-  timestepsPassed += 1
+
+  for pos, humanCar in enumerate(humanSprites):
+    
+    theta = positionData[x][pos]
+    humanCar.x, humanCar.y = (r*math.cos(math.radians(theta))+360, 720-((r*math.sin(math.radians(theta))+360)))
+    humanCar.display()
+    timestepsPassed += 1
 
   pygame.display.flip()
-  clock.tick(2)
+  clock.tick(30)

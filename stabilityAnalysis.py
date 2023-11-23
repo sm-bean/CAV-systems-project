@@ -10,7 +10,7 @@ b1 = 0
 b2 = 0
 cccDelay = 0.5
 humanDelay = 1
-fineness = 0.0001
+fineness = 0.1
 
 def f(gamma):
     return np.linalg.det((gamma * I) - L - (P * (np.exp(1) ** (-gamma * humanDelay))) - (R * (np.exp(1) ** (-gamma * cccDelay))))
@@ -42,7 +42,7 @@ I = np.matrix([[1, 0, 0, 1, 0, 0],
 
 unitSquare = np.array([[-0.5, 0.5], [0.5, 0.5], [-0.5, -0.5], [0.5, -0.5]])
 
-max = 2
+max = 100
 min = -2
 meshDensity = 4
 roots = []
@@ -128,9 +128,11 @@ while not finished:
         
         else:
             # omit square
-            np.delete(initialMesh, position, axis=0)
-
-    plot(initialMesh)
+            try:
+                np.delete(initialMesh, position, axis=0)
+            except IndexError:
+                continue
+    #plot(initialMesh)
 
     #Check if there are any remaining bracketing squares
     if np.array_equal(initialMesh, previousMesh):
