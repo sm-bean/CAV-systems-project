@@ -3,16 +3,19 @@ import matplotlib.pyplot as plt
 import pygame, sys
 
 ah = 0.2
-bh = 1.5
+bh = 0.5
 vmax = 5
-hst = 5
+hst = 20
 hgo = 55
 car_length = 5
-track_length = 90
-c = 0.05
+track_length = 360
+c = 0.03
 amin = -20
 amax = 3
 stepsPerSecond = 100
+
+def Car():
+  cars = []
 
 class Human():
   def __init__(self, position):
@@ -23,7 +26,12 @@ class Human():
     self.next_vehicle = car_in_front
   
   def getHeadway(self):
-    x = (self.next_vehicle.distance_travelled - self.distance_travelled) - car_length
+    if self.next_vehicle == Car.cars[-1]:
+      x = (self.next_vehicle.distance_travelled + 360 - self.distance_travelled) - car_length
+
+    else:  
+      x = (self.next_vehicle.distance_travelled - self.distance_travelled) - car_length
+
     while x < 0:
       x += track_length
     return x
@@ -65,13 +73,12 @@ class Human():
     x = self.optimalVelocity(ah, bh, vmax, hst, hgo)
     return f"i_x is {self.distance_travelled % 360}, delta_s is {self.distance_travelled}, OV {x}"
 
-def linkCars(humans):
-  for i in range(len(humans)-1):
-    humans[i].selectCarInFront(humans[(i+1)])
-  humans[-1].selectCarInFront(humans[0])
-  return humans
+def linkCars():
+  for i in range(len(Car.cars)-1):
+    Car.cars[i + 1].selectCarInFront(Car.cars[i])
+  Car.cars[0].selectCarInFront(Car.cars[-1])
 
-def main(humans):
+def main():
   counter = 0
   velocityData = []
   tempVelocity = []
@@ -84,15 +91,15 @@ def main(humans):
   while True:
     for x in range(stepsPerSecond):
       counter += 1
-      for car in humans:
+      for car in Car.cars:
         tempVelocity.append(car.velocity)
         tempAccel.append(car.getAcceleration())
         tempPosition.append(car.distance_travelled%360)
         car.updateVelocity()
-        print(f"pos: {round(car.distance_travelled%360)}")
-        print(f"v: {round(car.velocity)}")
-        print(f"ov: {round(car.optimalVelocity(ah, bh, vmax, hst, hgo))}")
-        print(f"a: {round(car.getAcceleration())}")
+        #print(f"pos: {round(car.distance_travelled%360)}")
+        #print(f"v: {round(car.velocity)}")
+        #print(f"ov: {round(car.optimalVelocity(ah, bh, vmax, hst, hgo))}")
+        #print(f"a: {round(car.getAcceleration())}")
         car.distance_travelled += car.velocity
       velocityData.append(tempVelocity)
       accelData.append(tempAccel)
@@ -112,13 +119,14 @@ def main(humans):
     elif usr == 'end':
       break
 
-    print([str(x) for x in humans])
+    print([str(x) for x in Car.cars])
 
-humans = [Human(0), Human(80)]
+Car.cars = [Human(50), Human(30), Human(0)]
 
 #print(humans[0].getPosition())
 
-main(linkCars(humans))
+linkCars()
+main()
 
 #Animation starts here
 #print(positionData)
@@ -137,7 +145,7 @@ screen_width = 720
 screen_height = 720
 screen = pygame.display.set_mode((screen_width, screen_height))
 
-humanSprites = [humanSprite((0, 0), 'RED') for car in humans]
+humanSprites = [humanSprite((0, 0), 'RED') for car in Car.cars]
 humanCar = humanSprite((0, 0), 'RED')
 
 bg = pygame.image.load("RingRoad.png")
