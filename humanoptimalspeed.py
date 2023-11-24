@@ -5,7 +5,7 @@ import pygame, sys
 ah = 0.2
 bh = 0.5
 vmax = 5
-hst = 20
+hst = 5
 hgo = 55
 car_length = 5
 track_length = 360
@@ -27,7 +27,7 @@ class Human():
   
   def getHeadway(self):
     if self.next_vehicle == Car.cars[-1]:
-      x = (self.next_vehicle.distance_travelled + 360 - self.distance_travelled) - car_length
+      x = (self.next_vehicle.distance_travelled + track_length - self.distance_travelled) - car_length
 
     else:  
       x = (self.next_vehicle.distance_travelled - self.distance_travelled) - car_length
@@ -121,7 +121,7 @@ def main():
 
     print([str(x) for x in Car.cars])
 
-Car.cars = [Human(50), Human(30), Human(0)]
+Car.cars = [Human(350), Human(50), Human(20), Human(0)]
 
 #print(humans[0].getPosition())
 
