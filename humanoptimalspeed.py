@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import pygame, sys
 
 ah = 0.2
-bh = 0.5
+bh = 0.4
 vmax = 5
 hst = 5
 hgo = 55
@@ -12,13 +12,13 @@ track_length = 360
 c = 0.03
 amin = -20
 amax = 3
-stepsPerSecond = 100
+stepsPerSecond = 1
 
 
 class Car:
     cars = []
 
-    def sort():
+    def sort_cars():
         for i in range(len(Car.cars) - 1):
             for j in range(len(Car.cars) - 1):
                 if Car.cars[j].distance_travelled > Car.cars[j + 1].distance_travelled:
@@ -27,6 +27,8 @@ class Car:
                     Car.cars[j] = temp
 
         Car.cars.reverse()
+        for human in Car.cars:
+            print(human.distance_travelled)
 
 
 class Human:
@@ -55,7 +57,7 @@ class Human:
         return x
 
     def getPosition(self):
-        return self.distance_travelled % 360
+        return self.distance_travelled % track_length
 
     def optimalVelocity(self, ah, bh, vmax, hst, hgo):
         headway = self.getHeadway()
@@ -90,13 +92,15 @@ class Human:
 
     def __str__(self):
         x = self.optimalVelocity(ah, bh, vmax, hst, hgo)
-        return f"i_x is {self.distance_travelled % 360}, delta_s is {self.distance_travelled}, OV {x}"
+        return f"i_x is {self.distance_travelled % 360}, delta_s is {self.distance_travelled}, OV {x}, headway is {self.getHeadway()}"
 
 
 def linkCars():
     for i in range(len(Car.cars) - 1):
         Car.cars[i + 1].selectCarInFront(Car.cars[i])
     Car.cars[0].selectCarInFront(Car.cars[-1])
+    for car in Car.cars:
+        print(car.next_vehicle)
 
 
 def main():
@@ -108,6 +112,7 @@ def main():
     tempPosition = []
     global positionData
     positionData = []
+
     fig, ax = plt.subplots(
         ncols=1, nrows=2, figsize=(10, 5.4), layout="constrained", sharex=True
     )
@@ -117,7 +122,7 @@ def main():
             for car in Car.cars:
                 tempVelocity.append(car.velocity)
                 tempAccel.append(car.getAcceleration())
-                tempPosition.append(car.distance_travelled % 360)
+                tempPosition.append(car.distance_travelled % track_length)
                 car.updateVelocity()
                 # print(f"pos: {round(car.distance_travelled%360)}")
                 # print(f"v: {round(car.velocity)}")
@@ -145,11 +150,11 @@ def main():
         print([str(x) for x in Car.cars])
 
 
-Car.cars = [Human(350), Human(20), Human(50), Human(0)]
+Car.cars = [Human(350), Human(329), Human(290)]
 
 # print(humans[0].getPosition())
 
-Car.sort()
+Car.sort_cars()
 linkCars()
 main()
 
