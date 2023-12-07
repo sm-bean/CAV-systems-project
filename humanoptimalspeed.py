@@ -5,19 +5,19 @@ import pygame, sys
 ah = 0.2
 bh = 0.4
 vmax = 5
-hst = 5
+hst = 2
 hgo = 55
 car_length = 5
 track_length = 360
-c = 0.03
-amin = -20
+c = 0.05
+amin = -6
 amax = 3
-stepsPerSecond = 1
+stepsPerSecond = 100
 
 
 class Car:
     cars = []
-
+    
     def sort_cars():
         for i in range(len(Car.cars) - 1):
             for j in range(len(Car.cars) - 1):
@@ -29,7 +29,6 @@ class Car:
         Car.cars.reverse()
         for human in Car.cars:
             print(human.distance_travelled)
-
 
 class Human:
     def __init__(self, position):
@@ -71,14 +70,17 @@ class Human:
             )
 
     def updateVelocity(self):
-        self.velocity += self.getAcceleration()
+        self.velocity += self.getAcceleration() / stepsPerSecond
         return self.velocity
 
     def optimalAcceleration(self, vstart):
-        return (self.optimalVelocity(ah, bh, vmax, hst, hgo) - vstart) / stepsPerSecond
+        return ah*(self.optimalVelocity(ah, bh, vmax, hst, hgo) - vstart)
+
+    def velocityDelta(self):
+        return bh*(self.next_vehicle.velocity - self.velocity)
 
     def getAcceleration(self):
-        a = self.optimalAcceleration(self.velocity)
+        a = self.optimalAcceleration(self.velocity) + self.velocityDelta()
         if a <= amin - c:
             return amin
         elif a < amin + c:
@@ -92,7 +94,7 @@ class Human:
 
     def __str__(self):
         x = self.optimalVelocity(ah, bh, vmax, hst, hgo)
-        return f"i_x is {self.distance_travelled % 360}, delta_s is {self.distance_travelled}, OV {x}, headway is {self.getHeadway()}"
+        return f"OV {x}, Velocity dd {self.velocityDelta()}, a ={self.optimalAcceleration(self.velocity) - self.velocityDelta()}"
 
 
 def linkCars():
@@ -150,7 +152,7 @@ def main():
         print([str(x) for x in Car.cars])
 
 
-Car.cars = [Human(350), Human(329), Human(290)]
+Car.cars = [Human(350), Human(320), Human(290), Human(220), Human(150)]
 
 # print(humans[0].getPosition())
 
@@ -181,7 +183,7 @@ screen = pygame.display.set_mode((screen_width, screen_height))
 humanSprites = [humanSprite((0, 0), "RED") for car in Car.cars]
 humanCar = humanSprite((0, 0), "RED")
 
-bg = pygame.image.load("RingRoad.png")
+bg = pygame.image.load("CAV-systems-project\RingRoad.png")
 bg = pygame.transform.scale(bg, (screen_width, screen_height))
 r = 300
 timestepsPassed = 0
