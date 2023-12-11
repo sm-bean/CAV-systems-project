@@ -2,9 +2,9 @@ import math
 import matplotlib.pyplot as plt
 import pygame, sys
 
-ah = 0.2
-bh = 0.4
-vmax = 5
+ah = 0.4
+bh = 0.2
+vmax = 2
 hst = 2
 hgo = 55
 car_length = 5
@@ -13,7 +13,6 @@ c = 0.05
 amin = -6
 amax = 3
 stepsPerSecond = 100
-
 
 class Car:
     cars = []
@@ -107,6 +106,8 @@ def linkCars():
 
 def main():
     counter = 0
+    headwayData = []
+    tempHeadway = []
     velocityData = []
     tempVelocity = []
     accelData = []
@@ -116,7 +117,7 @@ def main():
     positionData = []
 
     fig, ax = plt.subplots(
-        ncols=1, nrows=2, figsize=(10, 5.4), layout="constrained", sharex=True
+        ncols=1, nrows=3, figsize=(10, 5.4), layout="constrained", sharex=True
     )
     while True:
         for x in range(stepsPerSecond):
@@ -124,6 +125,7 @@ def main():
             for car in Car.cars:
                 tempVelocity.append(car.velocity)
                 tempAccel.append(car.getAcceleration())
+                tempHeadway.append(car.getHeadway())
                 tempPosition.append(car.distance_travelled % track_length)
                 car.updateVelocity()
                 # print(f"pos: {round(car.distance_travelled%360)}")
@@ -133,16 +135,20 @@ def main():
                 car.distance_travelled += car.velocity
             velocityData.append(tempVelocity)
             accelData.append(tempAccel)
+            headwayData.append(tempHeadway)
             positionData.append(tempPosition)
             tempAccel = []
             tempVelocity = []
             tempPosition = []
+            tempHeadway = []
         usr = input()
         if usr == "show":
             ax[0].plot([x for x in range(counter)], velocityData)
             ax[0].set_ylabel("Velocity")
             ax[1].plot([x for x in range(counter)], accelData)
             ax[1].set_ylabel("Acceleration")
+            ax[2].plot([x for x in range(counter)], headwayData)
+            ax[2].set_ylabel("Headway")
             plt.xlabel("Timesteps")
             plt.show()
             break
