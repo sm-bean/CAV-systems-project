@@ -2,17 +2,18 @@ import math
 import matplotlib.pyplot as plt
 import pygame, sys
 
-ah = 0.4
-bh = 0.2
-vmax = 2
-hst = 2
+reactionTime = 1
+ah = 0.2
+bh = 0.4
+vmax = 30
+hst = 5
 hgo = 55
 car_length = 5
 track_length = 360
 c = 0.05
 amin = -6
 amax = 3
-stepsPerSecond = 100
+stepsPerSecond = 30
 
 class Car:
     cars = []
@@ -31,6 +32,8 @@ class Car:
 
 class Human:
     def __init__(self, position):
+        self.headwayHistory = [0 for x in range(round(stepsPerSecond*reactionTime))]
+        self.velocityHistory = [0 for x in range(round(stepsPerSecond*reactionTime))]
         self.distance_travelled = position
         self.velocity = 0
 
@@ -54,11 +57,17 @@ class Human:
             x += track_length
         return x
 
+    def getHeadwayTau(self):
+        return self.headwayHistory[-1]
+    
+    def getVelocityTau(self):
+        return self.velocityHistory[-1]
+    
     def getPosition(self):
         return self.distance_travelled % track_length
 
     def optimalVelocity(self, ah, bh, vmax, hst, hgo):
-        headway = self.getHeadway()
+        headway = self.getHeadwayTau()
         if headway <= hst:
             return 0
         elif headway >= hgo:
@@ -69,17 +78,19 @@ class Human:
             )
 
     def updateVelocity(self):
-        self.velocity += self.getAcceleration() / stepsPerSecond
+        self.velocityHistory.insert(0, self.velocity)
+        self.velocityHistory.pop()
+        self.velocity += (self.getAcceleration() / stepsPerSecond)
         return self.velocity
 
-    def optimalAcceleration(self, vstart):
-        return ah*(self.optimalVelocity(ah, bh, vmax, hst, hgo) - vstart)
+    def optimalAcceleration(self):
+        return ah*(self.optimalVelocity(ah, bh, vmax, hst, hgo) - self.getVelocityTau())
 
     def velocityDelta(self):
-        return bh*(self.next_vehicle.velocity - self.velocity)
+        return bh*(self.next_vehicle.getVelocityTau() - self.getVelocityTau())
 
     def getAcceleration(self):
-        a = self.optimalAcceleration(self.velocity) + self.velocityDelta()
+        a = self.optimalAcceleration() + self.velocityDelta()
         if a <= amin - c:
             return amin
         elif a < amin + c:
@@ -93,7 +104,7 @@ class Human:
 
     def __str__(self):
         x = self.optimalVelocity(ah, bh, vmax, hst, hgo)
-        return f"OV {x}, Velocity dd {self.velocityDelta()}, a ={self.optimalAcceleration(self.velocity) - self.velocityDelta()}"
+        return f"headways - {self.headwayHistory}"
 
 
 def linkCars():
@@ -132,7 +143,9 @@ def main():
                 # print(f"v: {round(car.velocity)}")
                 # print(f"ov: {round(car.optimalVelocity(ah, bh, vmax, hst, hgo))}")
                 # print(f"a: {round(car.getAcceleration())}")
-                car.distance_travelled += car.velocity
+                car.distance_travelled += (car.velocity/stepsPerSecond)
+                car.headwayHistory.insert(0, car.getHeadway())
+                car.headwayHistory.pop()
             velocityData.append(tempVelocity)
             accelData.append(tempAccel)
             headwayData.append(tempHeadway)
@@ -158,7 +171,7 @@ def main():
         print([str(x) for x in Car.cars])
 
 
-Car.cars = [Human(350), Human(320), Human(290), Human(220), Human(150)]
+Car.cars = [Human(20), Human(30), Human(60)]
 
 # print(humans[0].getPosition())
 
@@ -202,7 +215,7 @@ for x in range(len(positionData) - 1):
             sys.exit()
 
     for pos, humanCar in enumerate(humanSprites):
-        theta = positionData[x][pos]
+        theta = (360/track_length)*positionData[x][pos]
         humanCar.x, humanCar.y = (
             r * math.cos(math.radians(theta)) + 360,
             720 - ((r * math.sin(math.radians(theta)) + 360)),
@@ -211,4 +224,4 @@ for x in range(len(positionData) - 1):
         timestepsPassed += 1
 
     pygame.display.flip()
-    clock.tick(30)
+    clock.tick(60)
