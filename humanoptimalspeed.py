@@ -4,10 +4,10 @@ import pygame, sys
 
 reactionTime = 1
 cccDelay = 0.2
-ah = 0.2
-bh = 0.4
-alpha = 0.2
-beta = 0.4
+ah = 0.4
+bh = 0.2
+alpha = 2
+beta = 0.2
 vmax = 30
 hst = 5
 hgo = 55
@@ -21,7 +21,7 @@ stepsPerSecond = 30
 class Car:
     cars = []
     def __init__(self, position):
-        # currently all parameters are constant, but these can be changed per vehcile
+        # currently all parameters are constant, but these can be changed per vehicle
         self.vmax = vmax
         self.amax = amax
         self.amin = amin
@@ -84,13 +84,13 @@ class Car:
     
     def getAcceleration(self):
         a = self.optimalAcceleration() + self.velocityDelta()
-        if a <= self.amin - self.c:
+        if (a <= self.amin - self.c):
             return self.amin
-        elif a < self.amin + self.c:
+        elif (a < self.amin + self.c):
             return a + ((self.amin - a + self.c) ** 2 / (4 * self.c))
-        elif a <= self.amax - self.c:
+        elif (a <= self.amax - self.c):
             return a
-        elif a < self.amax + self.c:
+        elif (a < self.amax + self.c):
             return a - ((self.amax - a - self.c) ** 2 / (4 * self.c))
         else:
             return self.amax
@@ -120,7 +120,7 @@ class Human(Car):
             return 0
         elif headway >= self.hgo:
             return self.vmax
-        else:
+        elif (headway > self.hst) and (headway < self.hgo):
             return (self.vmax / 2) * (1 - (math.cos(math.pi * (headway - self.hst) / (self.hgo - self.hst))))
     
     def optimalAcceleration(self):
@@ -151,8 +151,9 @@ class Autonomous(Car):
                     counter = 0
                 else:
                     counter += 1
+            self.carsSeen.append(counter)
         else:
-            self.carsSeen = [counter]
+            self.carsSeen.append(counter)
 
     def optimalVelocity(self):
         headway = self.getHeadwaySigma()
@@ -166,10 +167,13 @@ class Autonomous(Car):
     def optimalAcceleration(self):
         return self.alpha*(self.optimalVelocity() - self.getVelocitySigma())
 
-    def velocityDelta(self): # different for autonomous vehicles
+    def velocityDelta(self): # different velocity delta for autonomous vehicles
         tempDelta = 0
         for human_index in self.carsSeen:
-            tempDelta += (Car.cars[human_index].bh * (Car.cars[human_index].getVelocitySigma() - self.getVelocitySigma()))
+            if Car.cars[human_index].type == "human":
+                tempDelta = tempDelta + (Car.cars[human_index].bh * (Car.cars[human_index].getVelocitySigma() - self.getVelocitySigma()))
+            elif Car.cars[human_index].type == "autonomous":
+                tempDelta = tempDelta + (Car.cars[human_index].beta * (Car.cars[human_index].getVelocitySigma() - self.getVelocitySigma()))
         return tempDelta
     
     def __str__(self):
@@ -204,7 +208,7 @@ def main():
     fig, ax = plt.subplots(
         ncols=1, nrows=3, figsize=(10, 5.4), layout="constrained", sharex=True
     )
-    
+
     while True:
         for x in range(stepsPerSecond):
             counter += 1
@@ -262,12 +266,13 @@ def main():
         print([str(x) for x in Car.cars])
 
 
-Car.cars = [Human(30), Human(20), Autonomous(10), Human(50), Human(80), Human(120), Autonomous(240), Human(280)]
-
-# print(humans[0].getPosition())
+Car.cars = [Autonomous(15), Human(45), Human(85), Autonomous(115), Human(140), Human(180)]
 
 Car.sort_cars()
 linkCars()
+
+#print(Car.cars[2].carsSeen)
+
 main()
 
 # Animation starts here
