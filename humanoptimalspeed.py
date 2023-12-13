@@ -16,7 +16,8 @@ track_length = 360
 c = 0.05
 amin = -6
 amax = 3
-stepsPerSecond = 30
+stepsPerSecond = 1000
+speedOfAnimation = 25
 
 class Car:
     cars = []
@@ -204,6 +205,7 @@ def main():
     tempPosition = []
     global positionData
     positionData = []
+    crashDetected = False
 
     fig, ax = plt.subplots(
         ncols=1, nrows=3, figsize=(10, 5.4), layout="constrained", sharex=True
@@ -232,6 +234,13 @@ def main():
                 car.headwayHistorySigma.insert(0, car.getHeadway())
                 car.headwayHistoryTau.pop()
                 car.headwayHistorySigma.pop()
+
+                if car.getHeadway() < car.car_length:
+                    print(f"CRASH DETECTED at {(counter*stepsPerSecond) + x} timesteps")
+                    crashDetected = True
+                
+                
+
             velocityData.append(tempVelocity)
             accelData.append(tempAccel)
             headwayData.append(tempHeadway)
@@ -247,7 +256,7 @@ def main():
             tempPosition = []
             tempHeadway = []
         usr = input()
-        if usr == "show":
+        if usr == "show" or crashDetected:
             ax[0].plot([x for x in range(counter)], velocityData)
             ax[0].plot([x for x in range(counter)], velocityA, linestyle='dashed')
             ax[0].set_ylabel("Velocity")
@@ -259,63 +268,63 @@ def main():
             ax[2].set_ylabel("Headway")
             plt.xlabel("Timesteps")
             plt.show()
-            break
+            animate()
         elif usr == "end":
-            break
+            animate()
 
         print([str(x) for x in Car.cars])
 
 
-Car.cars = [Autonomous(15), Human(45), Human(85), Autonomous(115), Human(140), Human(180)]
+Car.cars = [Autonomous(15), Human(45), Autonomous(60), Human(85), Autonomous(115), Human(140), Autonomous(180)]
 
 Car.sort_cars()
 linkCars()
 
-#print(Car.cars[2].carsSeen)
+def animate(speed=speedOfAnimation):
+    pygame.init()
+
+
+    class humanSprite:
+        def __init__(self, position, colour):
+            self.x, self.y = position
+            self.colour = colour
+
+        def display(self):
+            pygame.draw.circle(screen, self.colour, (self.x, self.y), 30, width=0)
+
+    clock = pygame.time.Clock()
+
+    screen_width = 720
+    screen_height = 720
+    screen = pygame.display.set_mode((screen_width, screen_height))
+
+    humanSprites = [humanSprite((0, 0), "RED") if car.type == "human" else humanSprite((0,0), "BLUE") for car in Car.cars]
+
+    bg = pygame.image.load("RingRoad.png")
+    bg = pygame.transform.scale(bg, (screen_width, screen_height))
+    r = 300
+    for timestepsPassed in range(len(positionData) - 1):
+        if timestepsPassed%speed == 0:
+            screen.blit(bg, (0, 0)) 
+        else:
+            continue
+
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+
+        for pos, humanCar in enumerate(humanSprites):
+            theta = (360/track_length)*positionData[timestepsPassed][pos]
+            humanCar.x, humanCar.y = (
+                r * math.cos(math.radians(theta)) + 360,
+                720 - ((r * math.sin(math.radians(theta)) + 360)),
+            )
+            humanCar.display()
+            
+
+        pygame.display.flip()
+        clock.tick(60)
+    exit()
 
 main()
-
-# Animation starts here
-# print(positionData)
-pygame.init()
-
-
-class humanSprite:
-    def __init__(self, position, colour):
-        self.x, self.y = position
-        self.colour = colour
-
-    def display(self):
-        pygame.draw.circle(screen, self.colour, (self.x, self.y), 30, width=0)
-
-clock = pygame.time.Clock()
-
-screen_width = 720
-screen_height = 720
-screen = pygame.display.set_mode((screen_width, screen_height))
-
-humanSprites = [humanSprite((0, 0), "RED") if car.type == "human" else humanSprite((0,0), "BLUE") for car in Car.cars]
-
-bg = pygame.image.load("CAV-systems-project\RingRoad.png")
-bg = pygame.transform.scale(bg, (screen_width, screen_height))
-r = 300
-timestepsPassed = 0
-for x in range(len(positionData) - 1):
-    screen.blit(bg, (0, 0))
-
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            pygame.quit()
-            sys.exit()
-
-    for pos, humanCar in enumerate(humanSprites):
-        theta = (360/track_length)*positionData[x][pos]
-        humanCar.x, humanCar.y = (
-            r * math.cos(math.radians(theta)) + 360,
-            720 - ((r * math.sin(math.radians(theta)) + 360)),
-        )
-        humanCar.display()
-        timestepsPassed += 1
-
-    pygame.display.flip()
-    clock.tick(60)
