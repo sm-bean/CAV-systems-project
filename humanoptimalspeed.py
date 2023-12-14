@@ -2,6 +2,7 @@ import math
 import matplotlib.pyplot as plt
 import pygame, sys
 from statistics import stdev
+import csv
 
 reactionTime = 1
 cccDelay = 0.2
@@ -227,6 +228,7 @@ def main():
                     tempAccelA.append(car.getAcceleration())
                     tempHeadwayA.append(car.getHeadway())
                 tempPosition.append(car.distance_travelled % track_length)
+
                 car.updateVelocity()
                 # print(f"pos: {round(car.distance_travelled%360)}")
                 # print(f"v: {round(car.velocity)}")
@@ -240,9 +242,7 @@ def main():
 
                 if car.getHeadway() < car.car_length:
                     print(f"CRASH DETECTED at {(counter*stepsPerSecond) + x} timesteps")
-                    finished = True
-                
-                
+                    finished = True                
 
             velocityData.append(tempVelocity)
             accelData.append(tempAccel)
@@ -282,11 +282,30 @@ def main():
             animate()
         elif usr == "end":
             animate()
+        elif usr == "data":
+
+            allVelocities = [vsHuman+vsAuto for vsHuman, vsAuto in zip(velocityData, velocityA)]
+            velocityHeaders = [f"Velocity{x+1}" for x in range(len(velocityData[0]))] + [f"VelocityAV{x+1}" for x in range(len(velocityA[0]))]
+            allAccels = [asHuman+asAuto for asHuman, asAuto in zip(accelData, accelA)]
+            accelHeaders = [f"Accel{x+1}" for x in range(len(velocityData[0]))] + [f"AccelAV{x+1}" for x in range(len(velocityA[0]))]
+            allHeadways = [hsHuman+hsAuto for hsHuman, hsAuto in zip(headwayData, headwayA)]
+            headwayHeaders = [f"Headway{x+1}" for x in range(len(headwayData[0]))] + [f"HeadwayAV{x+1}" for x in range(len(velocityA[0]))]
+
+            with open('CAV_data.csv', 'w', newline='') as cavData:
+                dataWriter = csv.writer(cavData)
+
+                headers = ['Time'] + velocityHeaders + accelHeaders + headwayHeaders + ["StdDV(Headway)"]
+                dataWriter.writerow(headers)
+            
+                for x in range(len(velocityData)):
+                    row = [x/stepsPerSecond] + allVelocities[x] + allAccels[x] + allHeadways[x] + [stdevs[x]]
+                    dataWriter.writerow(row)
+
 
         print([str(x) for x in Car.cars])
 
 
-Car.cars = [Autonomous(15), Human(45), Human(85), Autonomous(115), Human(140), Autonomous(180)]
+Car.cars = [Autonomous(15), Human(45), Human(85)]
 
 Car.sort_cars()
 linkCars()
