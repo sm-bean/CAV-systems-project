@@ -146,14 +146,14 @@ class Autonomous(Car):
 
     def cascade(self):
         selfIndex = Car.cars.index(self)
-        counter = selfIndex + 1
+        counter = selfIndex - 1
         if self.next_vehicle.type == "human":
             while Car.cars[counter].type == "human":
                 self.carsSeen.append(counter)
                 if counter == (len(Car.cars)-1):
                     counter = 0
                 else:
-                    counter += 1
+                    counter -= 1
             self.carsSeen.append(counter)
         else:
             self.carsSeen.append(counter)
