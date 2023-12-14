@@ -1,11 +1,12 @@
 import math
 import matplotlib.pyplot as plt
 import pygame, sys
+from statistics import stdev
 
 reactionTime = 1
 cccDelay = 0.2
 ah = 0.4
-bh = 0.2
+bh = 0.4
 alpha = 2
 beta = 0.2
 vmax = 30
@@ -205,7 +206,8 @@ def main():
     tempPosition = []
     global positionData
     positionData = []
-    crashDetected = False
+    stdevs = []
+    finished = False
 
     fig, ax = plt.subplots(
         ncols=1, nrows=3, figsize=(10, 5.4), layout="constrained", sharex=True
@@ -237,7 +239,7 @@ def main():
 
                 if car.getHeadway() < car.car_length:
                     print(f"CRASH DETECTED at {(counter*stepsPerSecond) + x} timesteps")
-                    crashDetected = True
+                    finished = True
                 
                 
 
@@ -248,6 +250,14 @@ def main():
             velocityA.append(tempVelocityA)
             headwayA.append(tempHeadwayA)
             accelA.append(tempAccelA)
+
+            #stdevs.append(stdev(tempHeadway + tempHeadwayA))
+            
+            allHeadways = tempHeadway + tempHeadwayA
+            if all(round(x) == round(allHeadways[0]) for x in allHeadways):
+                print (f"ROBUST STABILITY ACHIEVED AT {(counter*stepsPerSecond) + x} timesteps")
+                finished = True
+
             tempHeadwayA = []
             tempAccelA = []
             tempVelocityA = []
@@ -256,15 +266,16 @@ def main():
             tempPosition = []
             tempHeadway = []
         usr = input()
-        if usr == "show" or crashDetected:
-            ax[0].plot([x for x in range(counter)], velocityData)
-            ax[0].plot([x for x in range(counter)], velocityA, linestyle='dashed')
+        if usr == "show" or finished:
+            ax[0].plot(range(counter), velocityData)
+            ax[0].plot(range(counter), velocityA, linestyle='dashed')
             ax[0].set_ylabel("Velocity")
-            ax[1].plot([x for x in range(counter)], accelData)
-            ax[1].plot([x for x in range(counter)], accelA, linestyle='dashed')
+            ax[1].plot(range(counter), accelData)
+            ax[1].plot(range(counter), accelA, linestyle='dashed')
             ax[1].set_ylabel("Acceleration")
-            ax[2].plot([x for x in range(counter)], headwayData)
-            ax[2].plot([x for x in range(counter)], headwayA, linestyle='dashed')
+            ax[2].plot(range(counter), headwayData)
+            ax[2].plot(range(counter), headwayA, linestyle='dashed')
+            #ax[2].plot(range(counter), stdevs, linewidth=3)
             ax[2].set_ylabel("Headway")
             plt.xlabel("Timesteps")
             plt.show()
