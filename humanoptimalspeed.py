@@ -6,7 +6,7 @@ from statistics import stdev
 reactionTime = 1
 cccDelay = 0.2
 ah = 0.4
-bh = 0.4
+bh = 0.2
 alpha = 2
 beta = 0.2
 vmax = 30
@@ -17,8 +17,9 @@ track_length = 360
 c = 0.05
 amin = -6
 amax = 3
-stepsPerSecond = 1000
-speedOfAnimation = 25
+stepsPerSecond = 50
+speedOfAnimation = 5
+StabilityThreshold = 3
 
 class Car:
     cars = []
@@ -251,10 +252,9 @@ def main():
             headwayA.append(tempHeadwayA)
             accelA.append(tempAccelA)
 
-            #stdevs.append(stdev(tempHeadway + tempHeadwayA))
+            stdevs.append(stdev(tempHeadway + tempHeadwayA))
             
-            allHeadways = tempHeadway + tempHeadwayA
-            if all(round(x) == round(allHeadways[0]) for x in allHeadways):
+            if stdev(tempHeadwayA + tempHeadway) < StabilityThreshold:
                 print (f"ROBUST STABILITY ACHIEVED AT {(counter*stepsPerSecond) + x} timesteps")
                 finished = True
 
@@ -275,7 +275,7 @@ def main():
             ax[1].set_ylabel("Acceleration")
             ax[2].plot(range(counter), headwayData)
             ax[2].plot(range(counter), headwayA, linestyle='dashed')
-            #ax[2].plot(range(counter), stdevs, linewidth=3)
+            ax[2].plot(range(counter), stdevs, linewidth=3)
             ax[2].set_ylabel("Headway")
             plt.xlabel("Timesteps")
             plt.show()
@@ -286,7 +286,7 @@ def main():
         print([str(x) for x in Car.cars])
 
 
-Car.cars = [Autonomous(15), Human(45), Autonomous(60), Human(85), Autonomous(115), Human(140), Autonomous(180)]
+Car.cars = [Autonomous(15), Human(45), Human(85), Autonomous(115), Human(140), Autonomous(180)]
 
 Car.sort_cars()
 linkCars()
