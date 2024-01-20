@@ -6,7 +6,7 @@ import csv
 
 reactionTime = 1
 cccDelay = 0.2
-ah = 0.4
+ah = 0.2
 bh = 0.4
 alpha = 2
 beta = 0.4
@@ -14,7 +14,7 @@ vmax = 30
 hst = 15
 hgo = 100
 car_length = 5
-track_length = 250
+track_length = 360
 c = 0.05
 amin = -6
 amax = 3
@@ -81,6 +81,23 @@ class Car:
         else:
             x = (
                 self.selectObjectInFront(absPos).distance_travelled - self.distance_travelled # changed
+            ) - self.car_length
+
+        while x < 0:
+            x += track_length
+        return x
+    
+    def getVehicleHeadway(self, absPos):
+        if self.next_vehicle == absPos[-1]: # changed
+            x = (
+                self.next_vehicle.distance_travelled # changed
+                + track_length
+                - self.distance_travelled
+            ) - self.car_length
+
+        else:
+            x = (
+                self.next_vehicle.distance_travelled - self.distance_travelled # changed
             ) - self.car_length
 
         while x < 0:
@@ -163,14 +180,19 @@ class Autonomous(Car):
     def cascade(self, absPos):
         index = 0
         selfIndex = 0
+        self.carsSeen = []
         for object in absPos:
             if (object.id == self.id):
                 selfIndex = index
             else:
                 index += 1
+
         counter = selfIndex - 1
-        if (self.selectObjectInFront(absPos).type != "autonomous") and (self.selectObjectInFront(absPos).type != "traffic_light"): # changed
-            while (absolutePositions[counter].type != "autonomous") and (absolutePositions[counter].type != "traffic_light"):
+
+        # possibly ignore all of the commented code, as this is absolute garbage :)
+
+        '''if (self.selectObjectInFront(absPos).type != "autonomous") and (self.selectObjectInFront(absPos).type != "traffic_light"): # changed
+            while (absPos[counter].type != "autonomous") and (absPos[counter].type != "traffic_light"):
                 self.carsSeen.append(counter)
                 if counter == (len(absPos)-1):
                     counter = 0
@@ -178,7 +200,15 @@ class Autonomous(Car):
                     counter -= 1
             self.carsSeen.append(counter)
         else:
+            self.carsSeen.append(counter)'''
+        
+        '''while (absPos[counter].selectObjectInFront(absPos).type != "autonomous") and (absPos[counter].selectObjectInFront(absPos).type != "traffic_light"):
             self.carsSeen.append(counter)
+            counter -= 1'''
+
+        while (absPos[counter].type != "autonomous") and (absPos[counter].type != "traffic_light"):
+            self.carsSeen.append(counter)
+            counter -= 1
 
     def optimalVelocity(self):
         headway = self.getHeadwaySigma()
@@ -263,8 +293,11 @@ def allCascade(absPos):
         if i.type == "autonomous":
             i.cascade(absPos)
 
-def allStates(timestep):
-    for i in absolutePositions:
+def allStates(timestep, absPos):
+    '''for i in absPos:
+        if i.type == "traffic_light":
+            i.setState(timestep)'''
+    for i in obstacles:
         if i.type == "traffic_light":
             i.setState(timestep)
 
@@ -294,8 +327,10 @@ def main():
             counter += 1
 
             absolutePositions = updatePositions()
-            allStates(counter)
+            allStates(counter, absolutePositions)
             allCascade(absolutePositions)
+
+            #print(absolutePositions[2].carsSeen)
 
             #print(absolutePositions)
 
@@ -303,11 +338,11 @@ def main():
                 if car.type == "human":
                     tempVelocity.append(car.velocity)
                     tempAccel.append(car.getAcceleration(absolutePositions))
-                    tempHeadway.append(car.getHeadway(absolutePositions))
+                    tempHeadway.append(car.getVehicleHeadway(absolutePositions))
                 elif car.type == "autonomous":
                     tempVelocityA.append(car.velocity)
                     tempAccelA.append(car.getAcceleration(absolutePositions))
-                    tempHeadwayA.append(car.getHeadway(absolutePositions))
+                    tempHeadwayA.append(car.getVehicleHeadway(absolutePositions))
                 tempPosition.append(car.distance_travelled % track_length)
 
                 car.updateVelocity(absolutePositions)
@@ -318,7 +353,7 @@ def main():
                 car.headwayHistoryTau.pop()
                 car.headwayHistorySigma.pop()
 
-                if car.getHeadway(absolutePositions) < car.car_length:
+                if car.getVehicleHeadway(absolutePositions) < car.car_length:
                     print(f"CRASH DETECTED at {(counter*stepsPerSecond) + x} timesteps")
                     finished = True # jsut for testing :)                
 
@@ -381,8 +416,8 @@ def main():
 
         print([str(x) for x in absolutePositions])
 
-Car.cars = [Autonomous(0), Human(100), Human(50)]
-obstacles = []
+Car.cars = [Human(130), Autonomous(150), Human(300)]
+obstacles = [TrafficLight(250)]
 
 Car.sort_cars()
 linkCars()
