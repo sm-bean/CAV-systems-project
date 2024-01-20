@@ -11,8 +11,8 @@ bh = 0.4
 alpha = 2
 beta = 0.4
 vmax = 30
-hst = 15
-hgo = 100
+hst = 5
+hgo = 55
 car_length = 5
 track_length = 360
 c = 0.05
@@ -29,6 +29,7 @@ class Car:
     def __init__(self, position):
         # currently all parameters are constant, but these can be changed per vehicle
         self.vmax = vmax
+        self.vmaxLimited = vmax # vmax with speed limits
         self.amax = amax
         self.amin = amin
         self.hst = hst
@@ -152,9 +153,9 @@ class Human(Car):
         if headway <= self.hst:
             return 0
         elif headway >= self.hgo:
-            return self.vmax
+            return self.vmaxLimited
         elif (headway > self.hst) and (headway < self.hgo):
-            return (self.vmax / 2) * (1 - (math.cos(math.pi * (headway - self.hst) / (self.hgo - self.hst))))
+            return (self.vmaxLimited / 2) * (1 - (math.cos(math.pi * (headway - self.hst) / (self.hgo - self.hst))))
     
     def optimalAcceleration(self):
         return self.ah*(self.optimalVelocity() - self.getVelocityTau())
@@ -215,9 +216,9 @@ class Autonomous(Car):
         if headway <= self.hst:
             return 0
         elif headway >= self.hgo:
-            return self.vmax
+            return self.vmaxLimited
         else:
-            return (self.vmax / 2) * (1 - (math.cos(math.pi * (headway - self.hst) / (self.hgo - self.hst))))
+            return (self.vmaxLimited / 2) * (1 - (math.cos(math.pi * (headway - self.hst) / (self.hgo - self.hst))))
     
     def optimalAcceleration(self):
         return self.alpha*(self.optimalVelocity() - self.getVelocitySigma())
@@ -265,8 +266,41 @@ class TrafficLight():
     def __str__(self):
         return f"Traffic Light id = {self.id}"
     
+class SpeedLimit():
+    def __init__(self, startPos, endPos, maxSpeed):
+        self.minPos = startPos
+        self.maxPos = endPos
+        self.speed = maxSpeed
+        self.type = "speed_limit"
+        # right now SpeedLimit does not need an id, and is therefore not set
+
+    def getRange(self):
+        return (self.minPos, self.maxPos, self.speed)
+
+def currentMaxSpeed(vehicle):
+    withinRange = False
+    position = vehicle.getPosition()
+    for obstacle in obstacles:
+        if obstacle.type == "speed_limit":
+            posRange = obstacle.getRange()
+            if (position >= (posRange[0] - hgo)) and (position <= posRange[1]):
+                withinRange = True
+                new_vmax = obstacle.speed
+    if (not withinRange):
+        vehicle.vmaxLimited = vehicle.vmax
+    else:
+        vehicle.vmaxLimited = new_vmax
+def allSpeedLimits(absPos):
+    for vehicle in absPos:
+        if (vehicle.type == "human") or (vehicle.type == "autonomous"):
+            currentMaxSpeed(vehicle)
+
 def updatePositions():
     tempObstacles = obstacles.copy()
+    for element in tempObstacles:
+        if element.type != "traffic_light":
+            tempObstacles.remove(element)
+
     for obstacle in tempObstacles:
         if (obstacle.type == "traffic_light") and (obstacle.state == False):
             tempObstacles.remove(obstacle)
@@ -329,6 +363,7 @@ def main():
             absolutePositions = updatePositions()
             allStates(counter, absolutePositions)
             allCascade(absolutePositions)
+            allSpeedLimits(absolutePositions)
 
             #print(absolutePositions[2].carsSeen)
 
@@ -416,8 +451,8 @@ def main():
 
         print([str(x) for x in absolutePositions])
 
-Car.cars = [Human(130), Autonomous(150), Human(300)]
-obstacles = [TrafficLight(250)]
+Car.cars = [Human(10), Autonomous(100), Human(150)]
+obstacles = [SpeedLimit(260,360,10)]
 
 Car.sort_cars()
 linkCars()
