@@ -39,6 +39,7 @@ class Car:
         self.reactionTime = reactionTime
         self.cccDelay = cccDelay
         self.id = 0
+        self.stoppable = False # kai's idea
 
         self.headwayHistoryTau = [0 for x in range(round(stepsPerSecond*self.reactionTime))]
         self.velocityHistoryTau = [0 for x in range(round(stepsPerSecond*self.reactionTime))]
@@ -58,18 +59,28 @@ class Car:
         Car.cars.reverse()
         for human in Car.cars:
             print(human.distance_travelled)
+
+    def stoppingDist(self):
+        stop = (-1 * (self.velocity)**2)/(2*self.amin)
+        return stop
         
     def selectCarInFront(self, car_in_front):
         self.next_vehicle = car_in_front
 
     def selectObjectInFront(self, absPos):
         counter = 0
+        nextFound = False
         for object in absPos:
             if (object.id == self.id):
-                return absPos[counter-1]
+                while (not nextFound):
+                    if (absPos[counter-1].type == "traffic_light"):
+                        if (absPos[counter-1].isOrange == True) and (not self.stoppable):
+                            nextFound = False
+                            counter -= 1
+                    nextFound = True
+                    return absPos[counter-1]
             else:
                 counter += 1
-
 
     def getHeadway(self, absPos):
         if self.selectObjectInFront(absPos) == absPos[-1]: # changed
@@ -245,6 +256,10 @@ class TrafficLight():
         self.velocity = 0
         self.type = "traffic_light"
         self.state = True # false is green, red is true
+        self.orangeTime = 2
+        self.isOrange = True
+        self.orangeSteps = self.orangeTime*stepsPerSecond
+        self.lastRed = 0 # the most recent timestep the light turned red
         self.id = 0
         self.time = 20 # time to stay red/green for (in seconds)
         self.counter = 1
@@ -257,11 +272,29 @@ class TrafficLight():
         timestepMax = (self.time*self.counter*stepsPerSecond) + (stepsPerSecond-1)
         if (timestepMin < timestep) and (timestep < timestepMax):
             if self.state == True:
-                self.state = False
+                self.state = False # red to green
+                self.isOrange = False
+                print("red to green: " + str(timestep))
+                self.counter += 1
             else:
-                self.state = True
-            self.counter += 1
-            print("changed")
+                self.state = True # green to orange
+                self.isOrange = True
+                self.lastRed = timestep
+                for vehicle in Car.cars:
+                    posDiff = (self.getPosition() - vehicle.getPosition())
+                    if posDiff < 0:
+                        posDiff += track_length
+                    if vehicle.stoppingDist() < posDiff: # if stoppable
+                        vehicle.stoppable = True
+                    else:
+                        vehicle.stoppable = False
+                print("green to orange: " + str(timestep))
+                self.counter += 1
+        timeRed = timestep - self.lastRed
+        if (((self.orangeSteps)-(stepsPerSecond-1)) <= timeRed) and (timeRed <= ((self.orangeSteps)-(stepsPerSecond-1))) and (self.state == True):
+            self.state = True # orange to red
+            self.isOrange = False
+            print("orange to red: " + str(timestep))
     
     def __str__(self):
         return f"Traffic Light id = {self.id}"
@@ -451,8 +484,8 @@ def main():
 
         print([str(x) for x in absolutePositions])
 
-Car.cars = [Human(10), Autonomous(100), Human(150)]
-obstacles = [SpeedLimit(260,360,10)]
+Car.cars = [Autonomous(40), Human(100), Human(150)]
+obstacles = []
 
 Car.sort_cars()
 linkCars()
