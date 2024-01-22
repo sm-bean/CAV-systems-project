@@ -266,13 +266,22 @@ class TrafficLight():
         self.velocity = 0
         self.type = "traffic_light"
         self.state = True # false is green, red is true
-        self.orangeTime = 2
+        self.orangeTime = 5
         self.isOrange = True
         self.orangeSteps = self.orangeTime*stepsPerSecond
         self.lastRed = 0 # the most recent timestep the light turned red
         self.id = 0
         self.time = 20 # time to stay red/green for (in seconds)
         self.counter = 1
+
+    def getColour(self):
+        if self.isOrange and self.state == True:
+            return "o"
+        elif self.state:
+            return "r"
+        else:
+            return "g"
+        
     
     def getPosition(self):
         return self.position
@@ -390,6 +399,8 @@ def main():
     accelData = []
     tempAccel = []
     tempPosition = []
+    global trafficData
+    tempTrafficData, trafficData = [], []
     global positionData
     positionData = []
     stdevs = []
@@ -398,6 +409,7 @@ def main():
     fig, ax = plt.subplots(
         ncols=1, nrows=3, figsize=(10, 5.4), layout="constrained", sharex=True
     )
+
 
     while True:
         for x in range(stepsPerSecond):
@@ -411,6 +423,9 @@ def main():
             #print(absolutePositions[2].carsSeen)
 
             #print(absolutePositions)
+            for obstacle in obstacles:
+                if obstacle.type=="traffic_light":
+                    tempTrafficData.append(obstacle.getColour())
 
             for car in Car.cars:
                 if car.type == "human":
@@ -442,6 +457,8 @@ def main():
             velocityA.append(tempVelocityA)
             headwayA.append(tempHeadwayA)
             accelA.append(tempAccelA)
+            trafficData.append(tempTrafficData)
+            print()
 
             stdevs.append(stdev(tempHeadway + tempHeadwayA))
 
@@ -456,6 +473,7 @@ def main():
             tempVelocity = []
             tempPosition = []
             tempHeadway = []
+            tempTrafficData = []
         usr = input()
         if usr == "show" or finished:
             ax[0].plot(range(counter), velocityData)
@@ -516,7 +534,13 @@ def main():
         print([str(x) for x in absolutePositions])
 
 Car.cars = [Autonomous(40), Human(100), Human(150)]
-obstacles = []
+obstacles = [TrafficLight(180)]
+
+
+trafficLightPos = []
+for obstacle in obstacles:
+    if obstacle.type=='traffic_light':
+        trafficLightPos.append(obstacle.getPosition())
 
 Car.sort_cars()
 linkCars()
@@ -528,10 +552,11 @@ print(absolutePositions)
 def animate(speed=speedOfAnimation):
     pygame.init()
 
-    class humanSprite:
-        def __init__(self, position, colour):
+    class Sprite:
+        def __init__(self, position, colour, type='car'):
             self.x, self.y = position
             self.colour = colour
+            self.type = type
 
         def display(self):
             pygame.draw.circle(screen, self.colour, (self.x, self.y), 30, width=0)
@@ -542,12 +567,13 @@ def animate(speed=speedOfAnimation):
     screen_height = 720
     screen = pygame.display.set_mode((screen_width, screen_height))
 
-    humanSprites = [
-        humanSprite((0, 0), "RED")
+    vehicleSprites = [
+        Sprite((0, 0), "RED")
         if car.type == "human"
-        else humanSprite((0, 0), "BLUE")
+        else Sprite((0, 0), "BLUE")
         for car in Car.cars
     ]
+    obstacleSprites = [Sprite((0,0), "ORANGE", type='traffic_light') if obstacle.type == "traffic_light" else Sprite((0,0), "YELLOW") for obstacle in obstacles]
 
     bg = pygame.image.load("RingRoad.png")
     bg = pygame.transform.scale(bg, (screen_width, screen_height))
@@ -563,13 +589,32 @@ def animate(speed=speedOfAnimation):
                 pygame.quit()
                 sys.exit()
 
-        for pos, humanCar in enumerate(humanSprites):
+        for pos, humanCar in enumerate(vehicleSprites):
             theta = (360 / track_length) * positionData[timestepsPassed][pos]
+
             humanCar.x, humanCar.y = (
                 r * math.cos(math.radians(theta)) + 360,
                 720 - ((r * math.sin(math.radians(theta)) + 360)),
             )
             humanCar.display()
+                
+        for pos, obstacle in enumerate(obstacleSprites):
+
+            if obstacle.type=='traffic_light':
+                theta = (360 / track_length) * trafficLightPos[pos]
+                if trafficData[timestepsPassed][pos] == 'r':
+                    obstacle.colour='PINK'
+                elif trafficData[timestepsPassed][pos] == 'g':
+                    obstacle.colour='GREEN'
+                else:
+                    obstacle.colour='ORANGE'
+
+                obstacle.x, obstacle.y = (
+                r * math.cos(math.radians(theta)) + 360,
+                720 - ((r * math.sin(math.radians(theta)) + 360)),
+            )
+                
+            obstacle.display()
 
         pygame.display.flip()
         clock.tick(60)
