@@ -6,10 +6,10 @@ import csv
 
 reactionTime = 1
 cccDelay = 0.2
-ah = 0.4
-bh = 0.2
+ah = 0.2
+bh = 0.4
 alpha = 2
-beta = 0.2
+beta = 0.4
 vmax = 30
 hst = 5
 hgo = 55
@@ -22,13 +22,15 @@ stepsPerSecond = 50
 speedOfAnimation = 5
 StabilityThreshold = 3
 
+absolutePositions = []
 
 class Car:
     cars = []
 
     def __init__(self, position, specificvmax):
         # currently all parameters are constant, but these can be changed per vehicle
-        self.vmax = specificvmax
+        self.vmax = vmax
+        self.vmaxLimited = vmax # vmax with speed limits
         self.amax = amax
         self.amin = amin
         self.hst = hst
@@ -37,6 +39,8 @@ class Car:
         self.c = c
         self.reactionTime = reactionTime
         self.cccDelay = cccDelay
+        self.id = 0
+        self.stoppable = False # kai's idea
 
         self.headwayHistoryTau = [
             0 for x in range(round(stepsPerSecond * self.reactionTime))
@@ -65,20 +69,56 @@ class Car:
         for human in Car.cars:
             print(human.distance_travelled)
 
+    def stoppingDist(self):
+        stop = (-1 * (self.velocity)**2)/(2*self.amin)
+        return stop
+        
     def selectCarInFront(self, car_in_front):
         self.next_vehicle = car_in_front
 
-    def getHeadway(self):
-        if self.next_vehicle == Car.cars[-1]:
+    def selectObjectInFront(self, absPos):
+        counter = 0
+        nextFound = False
+        for object in absPos:
+            if (object.id == self.id):
+                while (not nextFound):
+                    if (absPos[counter-1].type == "traffic_light"):
+                        if (absPos[counter-1].isOrange == True) and (not self.stoppable):
+                            nextFound = False
+                            counter -= 1
+                    nextFound = True
+                    return absPos[counter-1]
+            else:
+                counter += 1
+
+    def getHeadway(self, absPos):
+        if self.selectObjectInFront(absPos) == absPos[-1]: # changed
             x = (
-                self.next_vehicle.distance_travelled
+                self.selectObjectInFront(absPos).distance_travelled # changed
                 + track_length
                 - self.distance_travelled
             ) - self.car_length
 
         else:
             x = (
-                self.next_vehicle.distance_travelled - self.distance_travelled
+                self.selectObjectInFront(absPos).distance_travelled - self.distance_travelled # changed
+            ) - self.car_length
+
+        while x < 0:
+            x += track_length
+        return x
+    
+    def getVehicleHeadway(self, absPos):
+        if self.next_vehicle == absPos[-1]: # changed
+            x = (
+                self.next_vehicle.distance_travelled # changed
+                + track_length
+                - self.distance_travelled
+            ) - self.car_length
+
+        else:
+            x = (
+                self.next_vehicle.distance_travelled - self.distance_travelled # changed
             ) - self.car_length
 
         while x < 0:
@@ -88,17 +128,17 @@ class Car:
     def getPosition(self):
         return self.distance_travelled % track_length
 
-    def updateVelocity(self):
+    def updateVelocity(self, absPos):
         self.velocityHistoryTau.insert(0, self.velocity)
         self.velocityHistorySigma.insert(0, self.velocity)
         self.velocityHistoryTau.pop()
         self.velocityHistorySigma.pop()
-        self.velocity += self.getAcceleration() / stepsPerSecond
+        self.velocity += (self.getAcceleration(absPos) / stepsPerSecond)
         return self.velocity
-
-    def getAcceleration(self):
-        a = self.optimalAcceleration() + self.velocityDelta()
-        if a <= self.amin - self.c:
+    
+    def getAcceleration(self,absPos):
+        a = self.optimalAcceleration() + self.velocityDelta(absPos)
+        if (a <= self.amin - self.c):
             return self.amin
         elif a < self.amin + self.c:
             return a + ((self.amin - a + self.c) ** 2 / (4 * self.c))
@@ -134,23 +174,23 @@ class Human(Car):
         if headway <= self.hst:
             return 0
         elif headway >= self.hgo:
-            return self.vmax
+            return self.vmaxLimited
         elif (headway > self.hst) and (headway < self.hgo):
-            return (self.vmax / 2) * (
-                1 - (math.cos(math.pi * (headway - self.hst) / (self.hgo - self.hst)))
-            )
-
+            return (self.vmaxLimited / 2) * (1 - (math.cos(math.pi * (headway - self.hst) / (self.hgo - self.hst))))
+    
     def optimalAcceleration(self):
         return self.ah * (self.optimalVelocity() - self.getVelocityTau())
 
-    def velocityDelta(self):
-        return self.bh * (self.next_vehicle.getVelocityTau() - self.getVelocityTau())
-
+    def velocityDelta(self, absPos):
+        if (self.selectObjectInFront(absPos).type == "human") or (self.selectObjectInFront(absPos).type == "autonomous"):
+            return self.bh*(self.selectObjectInFront(absPos).getVelocityTau() - self.getVelocityTau()) # changed
+        elif (self.selectObjectInFront(absPos).type == "traffic_light"):
+            return self.bh*(0 - self.getVelocityTau())
+    
     def __str__(self):
         x = self.optimalVelocity()
-        return f"Human OV - {self.optimalVelocity()}"
-
-
+        return f"Human OV - {self.optimalVelocity()} and id = {self.id}"
+    
 class Autonomous(Car):
     def __init__(self, position, autonomousspecificvmax=vmax):
         self.alpha = alpha
@@ -159,59 +199,161 @@ class Autonomous(Car):
         self.type = "autonomous"
         Car.__init__(self, position, autonomousspecificvmax)
 
-    def cascade(self):
-        selfIndex = Car.cars.index(self)
+    def cascade(self, absPos):
+        index = 0
+        selfIndex = 0
+        self.carsSeen = []
+        for object in absPos:
+            if (object.id == self.id):
+                selfIndex = index
+            else:
+                index += 1
+
         counter = selfIndex - 1
-        if self.next_vehicle.type == "human":
-            while Car.cars[counter].type == "human":
+
+        # possibly ignore all of the commented code, as this is absolute garbage :)
+
+        '''if (self.selectObjectInFront(absPos).type != "autonomous") and (self.selectObjectInFront(absPos).type != "traffic_light"): # changed
+            while (absPos[counter].type != "autonomous") and (absPos[counter].type != "traffic_light"):
                 self.carsSeen.append(counter)
-                if counter == (len(Car.cars) - 1):
+                if counter == (len(absPos)-1):
                     counter = 0
                 else:
                     counter -= 1
             self.carsSeen.append(counter)
         else:
+            self.carsSeen.append(counter)'''
+        
+        '''while (absPos[counter].selectObjectInFront(absPos).type != "autonomous") and (absPos[counter].selectObjectInFront(absPos).type != "traffic_light"):
             self.carsSeen.append(counter)
+            counter -= 1'''
+
+        while (absPos[counter].type != "autonomous") and (absPos[counter].type != "traffic_light"):
+            self.carsSeen.append(counter)
+            counter -= 1
 
     def optimalVelocity(self):
         headway = self.getHeadwaySigma()
         if headway <= self.hst:
             return 0
         elif headway >= self.hgo:
-            return self.vmax
+            return self.vmaxLimited
         else:
-            return (self.vmax / 2) * (
-                1 - (math.cos(math.pi * (headway - self.hst) / (self.hgo - self.hst)))
-            )
-
+            return (self.vmaxLimited / 2) * (1 - (math.cos(math.pi * (headway - self.hst) / (self.hgo - self.hst))))
+    
     def optimalAcceleration(self):
         return self.alpha * (self.optimalVelocity() - self.getVelocitySigma())
 
-    def velocityDelta(self):  # different velocity delta for autonomous vehicles
+    def velocityDelta(self, absPos): # different velocity delta for autonomous vehicles
         tempDelta = 0
         for human_index in self.carsSeen:
-            if Car.cars[human_index].type == "human":
-                tempDelta = tempDelta + (
-                    Car.cars[human_index].bh
-                    * (
-                        Car.cars[human_index].getVelocitySigma()
-                        - self.getVelocitySigma()
-                    )
-                )
-            elif Car.cars[human_index].type == "autonomous":
-                tempDelta = tempDelta + (
-                    Car.cars[human_index].beta
-                    * (
-                        Car.cars[human_index].getVelocitySigma()
-                        - self.getVelocitySigma()
-                    )
-                )
+            if absPos[human_index].type == "human":
+                tempDelta = tempDelta + (absPos[human_index].bh * (absPos[human_index].getVelocitySigma() - self.getVelocitySigma()))
+            elif absPos[human_index].type == "autonomous":
+                tempDelta = tempDelta + (absPos[human_index].beta * (absPos[human_index].getVelocitySigma() - self.getVelocitySigma()))
+            elif absPos[human_index].type == "traffic_light":
+                tempDelta = tempDelta + (self.beta * (0 - self.getVelocitySigma()))
         return tempDelta
 
     def __str__(self):
         x = self.optimalVelocity()
-        return f"AUTOMATED OV - {self.optimalVelocity()}"
+        return f"AUTOMATED OV - {self.optimalVelocity()} and id = {self.id}"
+    
+class TrafficLight():
+    def __init__(self,position):
+        self.position = position
+        self.distance_travelled = position
+        self.velocity = 0
+        self.type = "traffic_light"
+        self.state = True # false is green, red is true
+        self.orangeTime = 2
+        self.isOrange = True
+        self.orangeSteps = self.orangeTime*stepsPerSecond
+        self.lastRed = 0 # the most recent timestep the light turned red
+        self.id = 0
+        self.time = 20 # time to stay red/green for (in seconds)
+        self.counter = 1
+    
+    def getPosition(self):
+        return self.position
+    
+    def setState(self,timestep):
+        timestepMin = (self.time*self.counter*stepsPerSecond) - (stepsPerSecond-1)
+        timestepMax = (self.time*self.counter*stepsPerSecond) + (stepsPerSecond-1)
+        if (timestepMin < timestep) and (timestep < timestepMax):
+            if self.state == True:
+                self.state = False # red to green
+                self.isOrange = False
+                print("red to green: " + str(timestep))
+                self.counter += 1
+            else:
+                self.state = True # green to orange
+                self.isOrange = True
+                self.lastRed = timestep
+                for vehicle in Car.cars:
+                    posDiff = (self.getPosition() - vehicle.getPosition())
+                    if posDiff < 0:
+                        posDiff += track_length
+                    if vehicle.stoppingDist() < posDiff: # if stoppable
+                        vehicle.stoppable = True
+                    else:
+                        vehicle.stoppable = False
+                print("green to orange: " + str(timestep))
+                self.counter += 1
+        timeRed = timestep - self.lastRed
+        if (((self.orangeSteps)-(stepsPerSecond-1)) <= timeRed) and (timeRed <= ((self.orangeSteps)-(stepsPerSecond-1))) and (self.state == True):
+            self.state = True # orange to red
+            self.isOrange = False
+            print("orange to red: " + str(timestep))
+    
+    def __str__(self):
+        return f"Traffic Light id = {self.id}"
+    
+class SpeedLimit():
+    def __init__(self, startPos, endPos, maxSpeed):
+        self.minPos = startPos
+        self.maxPos = endPos
+        self.speed = maxSpeed
+        self.type = "speed_limit"
+        # right now SpeedLimit does not need an id, and is therefore not set
 
+    def getRange(self):
+        return (self.minPos, self.maxPos, self.speed)
+
+def currentMaxSpeed(vehicle):
+    withinRange = False
+    position = vehicle.getPosition()
+    for obstacle in obstacles:
+        if obstacle.type == "speed_limit":
+            posRange = obstacle.getRange()
+            if (position >= (posRange[0] - hgo)) and (position <= posRange[1]):
+                withinRange = True
+                new_vmax = obstacle.speed
+    if (not withinRange):
+        vehicle.vmaxLimited = vehicle.vmax
+    else:
+        vehicle.vmaxLimited = new_vmax
+def allSpeedLimits(absPos):
+    for vehicle in absPos:
+        if (vehicle.type == "human") or (vehicle.type == "autonomous"):
+            currentMaxSpeed(vehicle)
+
+def updatePositions():
+    tempObstacles = obstacles.copy()
+    for element in tempObstacles:
+        if element.type != "traffic_light":
+            tempObstacles.remove(element)
+
+    for obstacle in tempObstacles:
+        if (obstacle.type == "traffic_light") and (obstacle.state == False):
+            tempObstacles.remove(obstacle)
+    tempAbsPos = Car.cars + tempObstacles
+    tempAbsPos.sort(key=lambda x: x.getPosition(), reverse=True)
+    return(tempAbsPos)
+        
+def setId():
+    for i in range(len(absolutePositions)):
+        absolutePositions[i].id = i
 
 def linkCars():
     for i in range(len(Car.cars) - 1):
@@ -219,10 +361,22 @@ def linkCars():
     Car.cars[0].selectCarInFront(Car.cars[-1])
     for car in Car.cars:
         print(car.next_vehicle)
-    for i in range(len(Car.cars) - 1):
+    '''for i in range(len(Car.cars) - 1):
         if Car.cars[i].type == "autonomous":
-            Car.cars[i].cascade()
+            Car.cars[i].cascade()'''
 
+def allCascade(absPos):
+    for i in absPos:
+        if i.type == "autonomous":
+            i.cascade(absPos)
+
+def allStates(timestep, absPos):
+    '''for i in absPos:
+        if i.type == "traffic_light":
+            i.setState(timestep)'''
+    for i in obstacles:
+        if i.type == "traffic_light":
+            i.setState(timestep)
 
 def main():
     counter = 0
@@ -248,31 +402,38 @@ def main():
     while True:
         for x in range(stepsPerSecond):
             counter += 1
+
+            absolutePositions = updatePositions()
+            allStates(counter, absolutePositions)
+            allCascade(absolutePositions)
+            allSpeedLimits(absolutePositions)
+
+            #print(absolutePositions[2].carsSeen)
+
+            #print(absolutePositions)
+
             for car in Car.cars:
                 if car.type == "human":
                     tempVelocity.append(car.velocity)
-                    tempAccel.append(car.getAcceleration())
-                    tempHeadway.append(car.getHeadway())
+                    tempAccel.append(car.getAcceleration(absolutePositions))
+                    tempHeadway.append(car.getVehicleHeadway(absolutePositions))
                 elif car.type == "autonomous":
                     tempVelocityA.append(car.velocity)
-                    tempAccelA.append(car.getAcceleration())
-                    tempHeadwayA.append(car.getHeadway())
+                    tempAccelA.append(car.getAcceleration(absolutePositions))
+                    tempHeadwayA.append(car.getVehicleHeadway(absolutePositions))
                 tempPosition.append(car.distance_travelled % track_length)
 
-                car.updateVelocity()
-                # print(f"pos: {round(car.distance_travelled%360)}")
-                # print(f"v: {round(car.velocity)}")
-                # print(f"ov: {round(car.optimalVelocity(vmax, hst, hgo))}")
-                # print(f"a: {round(car.getAcceleration())}")
-                car.distance_travelled += car.velocity / stepsPerSecond
-                car.headwayHistoryTau.insert(0, car.getHeadway())
-                car.headwayHistorySigma.insert(0, car.getHeadway())
+                car.updateVelocity(absolutePositions)
+
+                car.distance_travelled += (car.velocity/stepsPerSecond)
+                car.headwayHistoryTau.insert(0, car.getHeadway(absolutePositions))
+                car.headwayHistorySigma.insert(0, car.getHeadway(absolutePositions))
                 car.headwayHistoryTau.pop()
                 car.headwayHistorySigma.pop()
 
-                if car.getHeadway() < car.car_length:
+                if car.getVehicleHeadway(absolutePositions) < car.car_length:
                     print(f"CRASH DETECTED at {(counter*stepsPerSecond) + x} timesteps")
-                    finished = True
+                    finished = True # jsut for testing :)                
 
             velocityData.append(tempVelocity)
             accelData.append(tempAccel)
@@ -285,10 +446,8 @@ def main():
             stdevs.append(stdev(tempHeadway + tempHeadwayA))
 
             if stdev(tempHeadwayA + tempHeadway) < StabilityThreshold:
-                print(
-                    f"ROBUST STABILITY ACHIEVED AT {(counter*stepsPerSecond) + x} timesteps"
-                )
-                finished = True
+                print (f"ROBUST STABILITY ACHIEVED AT {(counter*stepsPerSecond) + x} timesteps")
+                finished = False # just for testing :)
 
             tempHeadwayA = []
             tempAccelA = []
@@ -354,14 +513,17 @@ def main():
                     )
                     dataWriter.writerow(row)
 
-        print([str(x) for x in Car.cars])
+        print([str(x) for x in absolutePositions])
 
-
-Car.cars = [Human(15, 20), Autonomous(45, 15), Autonomous(85)]
+Car.cars = [Autonomous(40), Human(100), Human(150)]
+obstacles = []
 
 Car.sort_cars()
 linkCars()
-
+absolutePositions = updatePositions()
+setId()
+allCascade(absolutePositions)
+print(absolutePositions)
 
 def animate(speed=speedOfAnimation):
     pygame.init()
