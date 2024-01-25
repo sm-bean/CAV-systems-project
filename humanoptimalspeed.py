@@ -6,20 +6,20 @@ import csv
 
 reactionTime = 1
 cccDelay = 0.2
-ah = 0.2
-bh = 0.4
+ah = 0.4
+bh = 0.2
 alpha = 2
-beta = 0.4
+beta = 0.2
 vmax = 30
 hst = 5
-hgo = 55
+hgo = 100
 car_length = 5
-track_length = 360
+track_length = 720
 c = 0.05
 amin = -6
 amax = 3
 stepsPerSecond = 50
-speedOfAnimation = 5
+speedOfAnimation = 6
 StabilityThreshold = 3
 
 absolutePositions = []
@@ -40,7 +40,7 @@ class Car:
         self.reactionTime = reactionTime
         self.cccDelay = cccDelay
         self.id = 0
-        self.stoppable = False # kai's idea
+        self.stoppable = True # kai's idea
 
         self.headwayHistoryTau = [
             0 for x in range(round(stepsPerSecond * self.reactionTime))
@@ -68,10 +68,6 @@ class Car:
         Car.cars.reverse()
         for human in Car.cars:
             print(human.distance_travelled)
-
-    def stoppingDist(self):
-        stop = (-1 * (self.velocity)**2)/(2*self.amin)
-        return stop
         
     def selectCarInFront(self, car_in_front):
         self.next_vehicle = car_in_front
@@ -83,7 +79,11 @@ class Car:
             if (object.id == self.id):
                 while (not nextFound):
                     if (absPos[counter-1].type == "traffic_light"):
-                        if (absPos[counter-1].isOrange == True) and (not self.stoppable):
+                        if (absPos[counter-1].getColour() == "o") and (not self.stoppable):
+                            nextFound = False
+                            counter -= 1
+                    if absPos[counter-1].type == "traffic_light":
+                        if absPos[counter-1].getColour() == "g":
                             nextFound = False
                             counter -= 1
                     nextFound = True
@@ -92,18 +92,10 @@ class Car:
                 counter += 1
 
     def getHeadway(self, absPos):
-        if self.selectObjectInFront(absPos) == absPos[-1]: # changed
-            x = (
-                self.selectObjectInFront(absPos).distance_travelled # changed
-                + track_length
-                - self.distance_travelled
+        x = (
+                self.selectObjectInFront(absPos).getPosition() - self.getPosition() # changed
             ) - self.car_length
-
-        else:
-            x = (
-                self.selectObjectInFront(absPos).distance_travelled - self.distance_travelled # changed
-            ) - self.car_length
-
+        
         while x < 0:
             x += track_length
         return x
@@ -169,6 +161,10 @@ class Human(Car):
         self.type = "human"
         Car.__init__(self, position, humanspecificvmax)
 
+    def stoppingDist(self):
+        stop = (-1 * (self.getVelocityTau())**2)/(2*self.amin) + (self.getVelocityTau() * reactionTime)
+        return stop
+
     def optimalVelocity(self):
         headway = self.getHeadwayTau()
         if headway <= self.hst:
@@ -182,6 +178,10 @@ class Human(Car):
         return self.ah * (self.optimalVelocity() - self.getVelocityTau())
 
     def velocityDelta(self, absPos):
+        '''if self.selectObjectInFront(absPos).type == "traffic_light":
+            if self.selectObjectInFront(absPos).getColour != "g":
+                return 0 #Ignore velocity delta if traffic light'''
+        
         if (self.selectObjectInFront(absPos).type == "human") or (self.selectObjectInFront(absPos).type == "autonomous"):
             return self.bh*(self.selectObjectInFront(absPos).getVelocityTau() - self.getVelocityTau()) # changed
         elif (self.selectObjectInFront(absPos).type == "traffic_light"):
@@ -232,6 +232,10 @@ class Autonomous(Car):
             self.carsSeen.append(counter)
             counter -= 1
 
+    def stoppingDist(self):
+        stop = (-1 * (self.getVelocitySigma())**2)/(2*self.amin) + (self.getVelocitySigma() * cccDelay)
+        return stop
+
     def optimalVelocity(self):
         headway = self.getHeadwaySigma()
         if headway <= self.hst:
@@ -245,6 +249,9 @@ class Autonomous(Car):
         return self.alpha * (self.optimalVelocity() - self.getVelocitySigma())
 
     def velocityDelta(self, absPos): # different velocity delta for autonomous vehicles
+        '''if self.selectObjectInFront(absPos).type == "traffic_light":
+            if self.selectObjectInFront(absPos).getColour != "g":
+                return 0 #Ignore velocity delta if traffic light'''
         tempDelta = 0
         for human_index in self.carsSeen:
             if absPos[human_index].type == "human":
@@ -281,7 +288,6 @@ class TrafficLight():
             return "r"
         else:
             return "g"
-        
     
     def getPosition(self):
         return self.position
@@ -299,14 +305,6 @@ class TrafficLight():
                 self.state = True # green to orange
                 self.isOrange = True
                 self.lastRed = timestep
-                for vehicle in Car.cars:
-                    posDiff = (self.getPosition() - vehicle.getPosition())
-                    if posDiff < 0:
-                        posDiff += track_length
-                    if vehicle.stoppingDist() < posDiff: # if stoppable
-                        vehicle.stoppable = True
-                    else:
-                        vehicle.stoppable = False
                 print("green to orange: " + str(timestep))
                 self.counter += 1
         timeRed = timestep - self.lastRed
@@ -314,6 +312,19 @@ class TrafficLight():
             self.state = True # orange to red
             self.isOrange = False
             print("orange to red: " + str(timestep))
+        if self.getColour() == "o":
+            for vehicle in Car.cars:
+                posDiff = (self.getPosition() - vehicle.getPosition())
+                if posDiff < 0:
+                    posDiff += track_length
+
+                if (vehicle.stoppingDist()) < (posDiff): # if stoppable
+                    vehicle.stoppable = True
+                else:
+                    vehicle.stoppable = False
+        else:
+            for vehicle in Car.cars:
+                vehicle.stoppable = True
     
     def __str__(self):
         return f"Traffic Light id = {self.id}"
@@ -354,8 +365,9 @@ def updatePositions():
             tempObstacles.remove(element)
 
     for obstacle in tempObstacles:
-        if (obstacle.type == "traffic_light") and (obstacle.state == False):
-            tempObstacles.remove(obstacle)
+        if (obstacle.type == "traffic_light"):
+            if (obstacle.getColour() == 'g'):
+                tempObstacles.remove(obstacle)
     tempAbsPos = Car.cars + tempObstacles
     tempAbsPos.sort(key=lambda x: x.getPosition(), reverse=True)
     return(tempAbsPos)
@@ -431,11 +443,11 @@ def main():
                 if car.type == "human":
                     tempVelocity.append(car.velocity)
                     tempAccel.append(car.getAcceleration(absolutePositions))
-                    tempHeadway.append(car.getVehicleHeadway(absolutePositions))
+                    tempHeadway.append(car.getHeadway(absolutePositions))
                 elif car.type == "autonomous":
                     tempVelocityA.append(car.velocity)
                     tempAccelA.append(car.getAcceleration(absolutePositions))
-                    tempHeadwayA.append(car.getVehicleHeadway(absolutePositions))
+                    tempHeadwayA.append(car.getHeadway(absolutePositions))
                 tempPosition.append(car.distance_travelled % track_length)
 
                 car.updateVelocity(absolutePositions)
@@ -446,9 +458,14 @@ def main():
                 car.headwayHistoryTau.pop()
                 car.headwayHistorySigma.pop()
 
-                if car.getVehicleHeadway(absolutePositions) < car.car_length:
-                    print(f"CRASH DETECTED at {(counter*stepsPerSecond) + x} timesteps")
-                    finished = True # jsut for testing :)                
+                '''if car.getHeadway(absolutePositions) < car.car_length:
+                    if (car.selectObjectInFront(absolutePositions) == "traffic_light"):
+                        if (car.selectObjectInFront(absolutePositions).getColour() == 'r'):
+                            print(f"CRASH DETECTED at {(counter*stepsPerSecond) + x} timesteps")
+                            finished = True # jsut for testing :)                
+                    else:
+                        print(f"CRASH DETECTED at {(counter*stepsPerSecond) + x} timesteps")
+                        finished = True # jsut for testing :)'''
 
             velocityData.append(tempVelocity)
             accelData.append(tempAccel)
@@ -458,7 +475,6 @@ def main():
             headwayA.append(tempHeadwayA)
             accelA.append(tempAccelA)
             trafficData.append(tempTrafficData)
-            print()
 
             stdevs.append(stdev(tempHeadway + tempHeadwayA))
 
@@ -533,8 +549,10 @@ def main():
 
         print([str(x) for x in absolutePositions])
 
-Car.cars = [Autonomous(40), Human(100), Human(150)]
-obstacles = [TrafficLight(180)]
+
+#INITIALISATION
+Car.cars = [Human(100), Human(300), Autonomous(460), Human(500), Autonomous(550)]
+obstacles = [TrafficLight(180), TrafficLight(450)]
 
 
 trafficLightPos = []
