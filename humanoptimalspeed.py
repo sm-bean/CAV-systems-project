@@ -267,18 +267,18 @@ class Autonomous(Car):
         return f"AUTOMATED OV - {self.optimalVelocity()} and id = {self.id}"
     
 class TrafficLight():
-    def __init__(self,position):
+    def __init__(self,position, time=20, orangeTime=5):
         self.position = position
         self.distance_travelled = position
         self.velocity = 0
         self.type = "traffic_light"
         self.state = True # false is green, red is true
-        self.orangeTime = 5
+        self.orangeTime = orangeTime
         self.isOrange = True
         self.orangeSteps = self.orangeTime*stepsPerSecond
         self.lastRed = 0 # the most recent timestep the light turned red
         self.id = 0
-        self.time = 20 # time to stay red/green for (in seconds)
+        self.time = time # time to stay red/green for (in seconds)
         self.counter = 1
 
     def getColour(self):
@@ -552,7 +552,7 @@ def main():
 
 #INITIALISATION
 Car.cars = [Human(100), Human(300), Autonomous(460), Human(500), Autonomous(550)]
-obstacles = [TrafficLight(180), TrafficLight(450)]
+obstacles = [TrafficLight(180), TrafficLight(450, time=30, orangeTime=30/4)]
 
 
 trafficLightPos = []
