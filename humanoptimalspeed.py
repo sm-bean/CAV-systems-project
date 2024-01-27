@@ -126,6 +126,8 @@ class Car:
         self.velocityHistoryTau.pop()
         self.velocityHistorySigma.pop()
         self.velocity += (self.getAcceleration(absPos) / stepsPerSecond)
+        if (self.velocity < 0):
+            self.velocity = 0
         return self.velocity
     
     def getAcceleration(self,absPos):
