@@ -184,6 +184,9 @@ class Human(Car):
             if self.selectObjectInFront(absPos).getColour != "g":
                 return 0 #Ignore velocity delta if traffic light'''
         
+        if self.getHeadway(absPos) > self.hgo:
+            return 0
+    
         if (self.selectObjectInFront(absPos).type == "human") or (self.selectObjectInFront(absPos).type == "autonomous"):
             return self.bh*(self.selectObjectInFront(absPos).getVelocityTau() - self.getVelocityTau()) # changed
         elif (self.selectObjectInFront(absPos).type == "traffic_light"):
