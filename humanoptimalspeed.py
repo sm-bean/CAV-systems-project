@@ -584,6 +584,12 @@ def animate(speed=speedOfAnimation):
         def display(self):
             pygame.draw.circle(screen, self.colour, (self.x, self.y), 30, width=0)
 
+    text_font = pygame.font.SysFont("Roboto", 30)
+
+    def draw_text(text, font, text_col, coords):
+        img = font.render(text, True, text_col)
+        screen.blit(img, coords)
+
     clock = pygame.time.Clock()
 
     screen_width = 720
@@ -601,9 +607,26 @@ def animate(speed=speedOfAnimation):
     bg = pygame.image.load("RingRoad.png")
     bg = pygame.transform.scale(bg, (screen_width, screen_height))
     r = 300
+
+    def pause():
+        paused = True
+        while paused:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    sys.exit()
+                if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_ESCAPE:
+                        paused = False
+                    
+
+
     for timestepsPassed in range(len(positionData) - 1):
         if timestepsPassed % speed == 0:
             screen.blit(bg, (0, 0))
+            draw_text(f"Timestep: {timestepsPassed}", text_font, (0, 0, 0), (5, 5))
+            draw_text(f"Seconds: {timestepsPassed/stepsPerSecond}", text_font, (0, 0, 0), (5, 30))
+            draw_text(f"Speed: {speed}", text_font, (0, 0, 0), (5, 55))
         else:
             continue
 
@@ -611,6 +634,13 @@ def animate(speed=speedOfAnimation):
             if event.type == pygame.QUIT:
                 pygame.quit()
                 sys.exit()
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    pause()
+                if event.key == pygame.K_MINUS:
+                    speed -= 1
+                if event.key == pygame.K_EQUALS:
+                    speed += 1
 
         for pos, humanCar in enumerate(vehicleSprites):
             theta = (360 / track_length) * positionData[timestepsPassed][pos]
