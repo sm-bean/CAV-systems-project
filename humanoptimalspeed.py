@@ -2,19 +2,20 @@ import math
 import matplotlib.pyplot as plt
 import pygame, sys
 from statistics import stdev
+from random import randint
 import csv
 
 reactionTime = 1
 cccDelay = 0.2
-ah = 0.4
+ah = 0.2
 bh = 0.2
-alpha = 2
+alpha = 1
 beta = 0.2
 vmax = 30
 hst = 5
 hgo = 100
 car_length = 5
-track_length = 720
+track_length = 3250
 c = 0.05
 amin = -6
 amax = 3
@@ -556,8 +557,24 @@ def main():
 
 
 #INITIALISATION
-Car.cars = [Human(100), Human(300), Autonomous(460), Human(500), Autonomous(550)]
-obstacles = [TrafficLight(180), TrafficLight(450, time=30, orangeTime=30/4)]
+
+
+nAutonomous = 5
+n = 40
+cascadeLen = round(n / nAutonomous)
+bh = 0.6
+
+r = lambda: randint(math.ceil(-(track_length/n/2.5)), math.floor(track_length/n/2.5))
+p = lambda a: (track_length/n) * a + r()
+
+
+for x in range(1, n+1):
+    if x % cascadeLen == 0:
+        Car.cars.append(Autonomous(p(x)))
+    else:
+        Car.cars.append(Human(p(x)))
+
+obstacles = []
 
 
 trafficLightPos = []
@@ -575,6 +592,8 @@ print(absolutePositions)
 def animate(speed=speedOfAnimation):
     pygame.init()
 
+    
+
     class Sprite:
         def __init__(self, position, colour, type='car'):
             self.x, self.y = position
@@ -582,7 +601,7 @@ def animate(speed=speedOfAnimation):
             self.type = type
 
         def display(self):
-            pygame.draw.circle(screen, self.colour, (self.x, self.y), 30, width=0)
+            pygame.draw.circle(screen, self.colour, (self.x, self.y), 10, width=0)
 
     text_font = pygame.font.SysFont("Roboto", 30)
 
@@ -596,6 +615,8 @@ def animate(speed=speedOfAnimation):
     screen_height = 720
     screen = pygame.display.set_mode((screen_width, screen_height))
 
+   
+
     vehicleSprites = [
         Sprite((0, 0), "RED")
         if car.type == "human"
@@ -608,6 +629,7 @@ def animate(speed=speedOfAnimation):
     bg = pygame.transform.scale(bg, (screen_width, screen_height))
     r = 300
 
+    
     def pause():
         paused = True
         while paused:
@@ -619,7 +641,7 @@ def animate(speed=speedOfAnimation):
                     if event.key == pygame.K_ESCAPE:
                         paused = False
                     
-
+    frame_count = 0
 
     for timestepsPassed in range(len(positionData) - 1):
         if timestepsPassed % speed == 0:
@@ -668,9 +690,12 @@ def animate(speed=speedOfAnimation):
             )
                 
             obstacle.display()
-
-        pygame.display.flip()
         clock.tick(60)
+        pygame.display.flip()
+        frame_count += 1
+        filename = "AnimationImages/screen_%04d.png" % ( frame_count )
+        pygame.image.save(screen, filename)
+
     exit()
 
 
