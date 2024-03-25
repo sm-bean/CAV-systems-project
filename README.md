@@ -6,6 +6,12 @@ In dense environments, autonomous cars can contain traffic waves within the casc
 
 https://github.com/sm-bean/CAV-systems-project/assets/148566702/236a5fa1-54fb-4b91-9886-5b2b7995bcce
 
+Here is an example of an INCOMPATIBILITY of the governing equations with obstacles such as traffic lights.
+The velocity delta becomes greater than the velocity error causing the autonomous cars to speed through the traffic light.
+
+https://github.com/sm-bean/CAV-systems-project/assets/148566702/6e80e651-7451-4c1d-b4b5-512d1d0f90c6
+
+
 
 
 
