@@ -17,6 +17,11 @@ The velocity delta becomes greater than the velocity error causing the autonomou
 
 https://github.com/sm-bean/CAV-systems-project/assets/148566702/acdf3458-568b-42ad-9d8f-1497ea7d39c5
 
+Our simulation can also be used to investigate how phantom traffic behaves. Here we see 4 phantom traffic jams merge into 3, which then merge into 2. 
+
+https://github.com/sm-bean/CAV-systems-project/assets/148566702/7ca33fe3-44d6-4d08-ae92-cea8843d3560
+
+
 
 
 
