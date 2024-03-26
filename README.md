@@ -1,6 +1,10 @@
 How does it look when autonomous cars aren't able to stabilise the system?
 
-https://github.com/sm-bean/CAV-systems-project/assets/148566702/0fc4e4da-37ec-439e-b113-334f588c96df
+
+
+https://github.com/sm-bean/CAV-systems-project/assets/148566702/8b5a8bbc-61d2-4427-9387-2dbd7d789a07
+
+
 
 In dense environments, autonomous cars can contain traffic waves within the cascade but still fail to completely mitigate them.
 In our paper, these situations are also marked as unstable.
