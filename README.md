@@ -21,6 +21,12 @@ Our simulation can also be used to investigate how phantom traffic behaves. Here
 
 https://github.com/sm-bean/CAV-systems-project/assets/148566702/7ca33fe3-44d6-4d08-ae92-cea8843d3560
 
+Here we can see how autonomous cars eliminate the traffic waves. (although it fails to stabilise the whole system)
+
+https://github.com/sm-bean/CAV-systems-project/assets/148566702/1fee63f1-4a63-4fea-b7a2-c2580aa2d54b
+
+
+
 
 
 
