@@ -11,6 +11,11 @@ The velocity delta becomes greater than the velocity error causing the autonomou
 
 https://github.com/sm-bean/CAV-systems-project/assets/148566702/6e80e651-7451-4c1d-b4b5-512d1d0f90c6
 
+Autonomous cars' fail with traffic lights because of the velocity delta.
+
+https://github.com/sm-bean/CAV-systems-project/assets/148566702/a09e9f86-f49e-49ee-930c-488144371eb3
+
+
 
 
 
