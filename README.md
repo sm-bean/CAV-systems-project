@@ -4,7 +4,11 @@ https://github.com/sm-bean/CAV-systems-project/assets/146448103/67e4f70e-2181-42
 
 In dense environments, autonomous cars can contain traffic waves within the cascade but fail to mitigate them.
 
-https://github.com/sm-bean/CAV-systems-project/assets/148566702/236a5fa1-54fb-4b91-9886-5b2b7995bcce
+
+
+https://github.com/sm-bean/CAV-systems-project/assets/148566702/90a08610-a054-407e-b775-1f417e340f10
+
+
 
 Here is an example of an INCOMPATIBILITY of the governing equations with obstacles such as traffic lights.
 The velocity delta becomes greater than the velocity error causing the autonomous cars to speed through the traffic light.
