@@ -15,6 +15,14 @@ Autonomous cars' fail with traffic lights because of the velocity delta.
 
 https://github.com/sm-bean/CAV-systems-project/assets/148566702/a09e9f86-f49e-49ee-930c-488144371eb3
 
+This should work on mobile
+
+
+
+https://github.com/sm-bean/CAV-systems-project/assets/148566702/acdf3458-568b-42ad-9d8f-1497ea7d39c5
+
+
+
 
 
 
