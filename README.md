@@ -29,7 +29,11 @@ Our simulation is also able to simulate speed limits. Here is an example of VSL 
 
 https://github.com/sm-bean/CAV-systems-project/assets/148566702/6c42d489-7c97-49ef-9a2c-cca8098aa7f7
 
-It's worth noting is
+It's worth noting that VSL also works well in conjuction with CAVs.
+
+https://github.com/sm-bean/CAV-systems-project/assets/148566702/c98a35de-5d86-4fa3-a046-86d5df3ff6a0
+
+
 
 
 
