@@ -27,7 +27,11 @@ https://github.com/sm-bean/CAV-systems-project/assets/148566702/1fee63f1-4a63-4f
 
 Our simulation is also able to simulate speed limits. Here is an example of VSL in use, which is mitigating traffic with speed limits. As you can see, it is semi-successful but has a sudden speed difference and is not always stable.
 
-https://github.com/sm-bean/CAV-systems-project/assets/148566702/ffef1ed0-56dc-41c4-acf7-b723016575cd
+
+
+https://github.com/sm-bean/CAV-systems-project/assets/148566702/d21b81ce-0852-4709-9a63-40da753c7509
+
+
 
 It's worth noting that VSL also works well in conjuction with CAVs.
 
